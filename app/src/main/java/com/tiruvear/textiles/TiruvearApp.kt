@@ -1,6 +1,8 @@
 package com.tiruvear.textiles
 
 import android.app.Application
+import android.util.Log
+import android.widget.Toast
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.gotrue.GoTrue
@@ -10,6 +12,8 @@ import io.github.jan.supabase.storage.Storage
 class TiruvearApp : Application() {
 
     companion object {
+        private const val TAG = "TiruvearApp"
+        
         lateinit var supabaseClient: SupabaseClient
             private set
             
@@ -20,14 +24,25 @@ class TiruvearApp : Application() {
     override fun onCreate() {
         super.onCreate()
         
-        // Initialize Supabase
-        supabaseClient = createSupabaseClient(
-            supabaseUrl = SUPABASE_URL,
-            supabaseKey = SUPABASE_KEY
-        ) {
-            install(Postgrest)
-            install(GoTrue)
-            install(Storage)
+        try {
+            // Initialize Supabase
+            Log.d(TAG, "Initializing Supabase client")
+            supabaseClient = createSupabaseClient(
+                supabaseUrl = SUPABASE_URL,
+                supabaseKey = SUPABASE_KEY
+            ) {
+                install(Postgrest)
+                install(GoTrue)
+                install(Storage)
+            }
+            Log.d(TAG, "Supabase client initialized successfully")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error initializing Supabase client", e)
+            Toast.makeText(
+                applicationContext, 
+                "Failed to initialize Supabase: ${e.message}", 
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
 } 

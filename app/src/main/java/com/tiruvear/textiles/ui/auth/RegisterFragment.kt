@@ -2,12 +2,14 @@ package com.tiruvear.textiles.ui.auth
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import com.tiruvear.textiles.R
 import com.tiruvear.textiles.data.repositories.AuthRepositoryImpl
 import com.tiruvear.textiles.databinding.FragmentRegisterBinding
@@ -111,27 +113,37 @@ class RegisterFragment : Fragment() {
         val phone = binding.etPhone.text.toString().trim()
         val password = binding.etPassword.text.toString().trim()
         
+        // Check for empty fields
+        if (firstName.isEmpty() || lastName.isEmpty() || email.isEmpty() || phone.isEmpty() || password.isEmpty()) {
+            Toast.makeText(requireContext(), "All fields are required", Toast.LENGTH_LONG).show()
+            return
+        }
+        
         (requireActivity() as AuthActivity).showLoading()
         
         lifecycleScope.launch {
             try {
+                Log.d("RegisterFragment", "Starting registration for email: $email")
                 val result = authRepository.register(email, password, firstName, lastName, phone)
                 
                 (requireActivity() as AuthActivity).hideLoading()
                 
                 if (result.isSuccess) {
-                    Toast.makeText(requireContext(), R.string.success_register, Toast.LENGTH_SHORT).show()
-                    
-                    // Navigate to main activity
-                    val intent = Intent(requireContext(), MainActivity::class.java)
-                    startActivity(intent)
-                    requireActivity().finish()
+                    Toast.makeText(requireContext(), "Registration successful! You can now login.", Toast.LENGTH_LONG).show()
+                    // Navigate to login fragment
+                    parentFragmentManager.beginTransaction()
+                        .replace(R.id.fragment_container, LoginFragment())
+                        .commit()
                 } else {
-                    Toast.makeText(requireContext(), R.string.error_register, Toast.LENGTH_SHORT).show()
+                    // Get the specific error message
+                    val errorMessage = result.exceptionOrNull()?.message ?: "Unknown error occurred"
+                    Log.e("RegisterFragment", "Registration failed: $errorMessage")
+                    Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show()
                 }
             } catch (e: Exception) {
                 (requireActivity() as AuthActivity).hideLoading()
-                Toast.makeText(requireContext(), R.string.error_register, Toast.LENGTH_SHORT).show()
+                Log.e("RegisterFragment", "Exception during registration: ${e.message}", e)
+                Toast.makeText(requireContext(), "Registration failed: ${e.message}", Toast.LENGTH_LONG).show()
             }
         }
     }

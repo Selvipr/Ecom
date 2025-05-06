@@ -1,6 +1,7 @@
 package com.tiruvear.textiles.ui.main
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
@@ -22,7 +23,12 @@ class MainActivity : AppCompatActivity() {
         
         setSupportActionBar(binding.toolbar)
         
-        setupNavigation()
+        try {
+            setupNavigation()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Navigation setup failed: ${e.message}", Toast.LENGTH_LONG).show()
+            e.printStackTrace()
+        }
     }
     
     private fun setupNavigation() {
@@ -46,7 +52,7 @@ class MainActivity : AppCompatActivity() {
         
         // Listen for navigation changes to update the toolbar title
         navController.addOnDestinationChangedListener { _, destination, _ ->
-            binding.toolbar.title = destination.label
+            binding.toolbar.title = destination.label ?: getString(R.string.app_name)
         }
     }
     
