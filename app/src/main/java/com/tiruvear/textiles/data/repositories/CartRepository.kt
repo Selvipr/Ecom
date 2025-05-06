@@ -4,13 +4,17 @@ import com.tiruvear.textiles.TiruvearApp
 import com.tiruvear.textiles.data.models.Cart
 import com.tiruvear.textiles.data.models.CartItem
 import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.postgrest.from
-import io.github.jan.supabase.postgrest.query.filter.FilterOperation
-import io.github.jan.supabase.postgrest.query.filter.PostgrestFilterBuilder
+import io.github.jan.supabase.postgrest.query.FilterOperator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.Date
 import java.util.UUID
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import io.github.jan.supabase.postgrest.query.Count
+import io.github.jan.supabase.postgrest.query.Order
+import io.github.jan.supabase.postgrest.query.Returning
 
 interface CartRepository {
     suspend fun getCart(userId: String): Result<Cart>
@@ -30,18 +34,19 @@ class CartRepositoryImpl : CartRepository {
     override suspend fun getCart(userId: String): Result<Cart> = withContext(Dispatchers.IO) {
         try {
             // Check if user has an existing cart
-            val cartResponse = supabase.from("carts")
-                .select()
-                .eq("user_id", userId)
-                .single()
-                .decodeAs<Map<String, Any>>()
+            val cartResponse = supabase.postgrest["carts"]
+                .select {
+                    filter("user_id", FilterOperator.EQ, userId)
+                }
+                .decodeSingle<Map<String, Any>>()
             
             val cartId = cartResponse["id"] as String
             
             // Get cart items
-            val cartItems = supabase.from("cart_items")
-                .select("*, products(*), product_variants(*)")
-                .eq("cart_id", cartId)
+            val cartItems = supabase.postgrest["cart_items"]
+                .select {
+                    filter("cart_id", FilterOperator.EQ, cartId)
+                }
                 .decodeList<Map<String, Any>>()
                 .map { item -> mapToCartItem(item) }
             
@@ -60,13 +65,13 @@ class CartRepositoryImpl : CartRepository {
                 val newCartId = UUID.randomUUID().toString()
                 val now = Date()
                 
-                supabase.from("carts").insert(
-                    values = mapOf(
-                        "id" to newCartId,
-                        "user_id" to userId,
-                        "created_at" to now,
-                        "updated_at" to now
-                    )
+                supabase.postgrest["carts"].insert(
+                    object {
+                        val id = newCartId
+                        val user_id = userId
+                        val created_at = now
+                        val updated_at = now
+                    }
                 )
                 
                 val cart = Cart(
@@ -95,18 +100,23 @@ class CartRepositoryImpl : CartRepository {
             val cart = cartResult.getOrNull()!!
             
             // Check if item already exists in cart
-            val existingItems = supabase.from("cart_items")
-                .select()
-                .eq("cart_id", cart.id)
-                .eq("product_id", productId)
-                .also { query -> 
-                    if (variantId != null) {
-                        query.eq("variant_id", variantId)
-                    } else {
-                        query.isNull("variant_id")
+            val existingItems = if (variantId != null) {
+                supabase.postgrest["cart_items"]
+                    .select {
+                        filter("cart_id", FilterOperator.EQ, cart.id)
+                        filter("product_id", FilterOperator.EQ, productId)
+                        filter("variant_id", FilterOperator.EQ, variantId)
                     }
-                }
-                .decodeList<Map<String, Any>>()
+                    .decodeList<Map<String, Any>>()
+            } else {
+                supabase.postgrest["cart_items"]
+                    .select {
+                        filter("cart_id", FilterOperator.EQ, cart.id)
+                        filter("product_id", FilterOperator.EQ, productId)
+                        filter("variant_id", FilterOperator.IS, JsonNull)
+                    }
+                    .decodeList<Map<String, Any>>()
+            }
             
             if (existingItems.isNotEmpty()) {
                 // Update quantity
@@ -121,27 +131,37 @@ class CartRepositoryImpl : CartRepository {
             val cartItemId = UUID.randomUUID().toString()
             val now = Date()
             
-            val values = mutableMapOf(
-                "id" to cartItemId,
-                "cart_id" to cart.id,
-                "product_id" to productId,
-                "quantity" to quantity,
-                "created_at" to now,
-                "updated_at" to now
-            )
-            
             if (variantId != null) {
-                values["variant_id"] = variantId
+                supabase.postgrest["cart_items"].insert(
+                    object {
+                        val id = cartItemId
+                        val cart_id = cart.id
+                        val product_id = productId
+                        val variant_id = variantId
+                        val quantity = quantity
+                        val created_at = now
+                        val updated_at = now
+                    }
+                )
+            } else {
+                supabase.postgrest["cart_items"].insert(
+                    object {
+                        val id = cartItemId
+                        val cart_id = cart.id
+                        val product_id = productId
+                        val quantity = quantity
+                        val created_at = now
+                        val updated_at = now
+                    }
+                )
             }
             
-            supabase.from("cart_items").insert(values = values)
-            
             // Fetch the added item with product details
-            val cartItemData = supabase.from("cart_items")
-                .select("*, products(*), product_variants(*)")
-                .eq("id", cartItemId)
-                .single()
-                .decodeAs<Map<String, Any>>()
+            val cartItemData = supabase.postgrest["cart_items"]
+                .select {
+                    filter("id", FilterOperator.EQ, cartItemId)
+                }
+                .decodeSingle<Map<String, Any>>()
             
             Result.success(mapToCartItem(cartItemData))
         } catch (e: Exception) {
@@ -153,21 +173,23 @@ class CartRepositoryImpl : CartRepository {
         try {
             val now = Date()
             
-            supabase.from("cart_items").update(
-                values = mapOf(
-                    "quantity" to quantity,
-                    "updated_at" to now
-                )
-            ) {
-                eq("id", cartItemId)
+            // Create JSON object for update
+            val updateData = buildJsonObject {
+                put("quantity", quantity)
+                put("updated_at", now.toString())
             }
             
+            supabase.postgrest["cart_items"]
+                .update(updateData) {
+                    filter("id", FilterOperator.EQ, cartItemId)
+                }
+            
             // Fetch the updated item with product details
-            val cartItemData = supabase.from("cart_items")
-                .select("*, products(*), product_variants(*)")
-                .eq("id", cartItemId)
-                .single()
-                .decodeAs<Map<String, Any>>()
+            val cartItemData = supabase.postgrest["cart_items"]
+                .select {
+                    filter("id", FilterOperator.EQ, cartItemId)
+                }
+                .decodeSingle<Map<String, Any>>()
             
             Result.success(mapToCartItem(cartItemData))
         } catch (e: Exception) {
@@ -177,9 +199,10 @@ class CartRepositoryImpl : CartRepository {
     
     override suspend fun removeFromCart(cartItemId: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            supabase.from("cart_items").delete {
-                eq("id", cartItemId)
-            }
+            supabase.postgrest["cart_items"]
+                .delete {
+                    filter("id", FilterOperator.EQ, cartItemId)
+                }
             
             Result.success(Unit)
         } catch (e: Exception) {
@@ -189,9 +212,10 @@ class CartRepositoryImpl : CartRepository {
     
     override suspend fun clearCart(cartId: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            supabase.from("cart_items").delete {
-                eq("cart_id", cartId)
-            }
+            supabase.postgrest["cart_items"]
+                .delete {
+                    filter("cart_id", FilterOperator.EQ, cartId)
+                }
             
             Result.success(Unit)
         } catch (e: Exception) {
@@ -202,19 +226,20 @@ class CartRepositoryImpl : CartRepository {
     override suspend fun getCartItemCount(userId: String): Result<Int> = withContext(Dispatchers.IO) {
         try {
             // Get cart ID
-            val cartResponse = supabase.from("carts")
-                .select()
-                .eq("user_id", userId)
-                .single()
-                .decodeAs<Map<String, Any>>()
+            val cartResponse = supabase.postgrest["carts"]
+                .select {
+                    filter("user_id", FilterOperator.EQ, userId)
+                }
+                .decodeSingle<Map<String, Any>>()
             
             val cartId = cartResponse["id"] as String
             
             // Get count of items
-            val countResponse = supabase.from("cart_items")
-                .select(count = true)
-                .eq("cart_id", cartId)
-                .decodeAs<Map<String, Any>>()
+            val countResponse = supabase.postgrest["cart_items"]
+                .select(count = Count.EXACT) {
+                    filter("cart_id", FilterOperator.EQ, cartId)
+                }
+                .decodeSingle<Map<String, Any>>()
             
             val count = countResponse["count"] as Int
             
@@ -227,19 +252,20 @@ class CartRepositoryImpl : CartRepository {
     override suspend fun getAnonymousCart(deviceId: String): Result<Cart> = withContext(Dispatchers.IO) {
         try {
             // Similar to getCart, but using device_id instead of user_id
-            val cartResponse = supabase.from("carts")
-                .select()
-                .eq("device_id", deviceId)
-                .isNull("user_id")
-                .single()
-                .decodeAs<Map<String, Any>>()
+            val cartResponse = supabase.postgrest["carts"]
+                .select {
+                    filter("device_id", FilterOperator.EQ, deviceId)
+                    filter("user_id", FilterOperator.IS, JsonNull)
+                }
+                .decodeSingle<Map<String, Any>>()
             
             val cartId = cartResponse["id"] as String
             
             // Get cart items
-            val cartItems = supabase.from("cart_items")
-                .select("*, products(*), product_variants(*)")
-                .eq("cart_id", cartId)
+            val cartItems = supabase.postgrest["cart_items"]
+                .select {
+                    filter("cart_id", FilterOperator.EQ, cartId)
+                }
                 .decodeList<Map<String, Any>>()
                 .map { item -> mapToCartItem(item) }
             
@@ -258,13 +284,13 @@ class CartRepositoryImpl : CartRepository {
                 val newCartId = UUID.randomUUID().toString()
                 val now = Date()
                 
-                supabase.from("carts").insert(
-                    values = mapOf(
-                        "id" to newCartId,
-                        "device_id" to deviceId,
-                        "created_at" to now,
-                        "updated_at" to now
-                    )
+                supabase.postgrest["carts"].insert(
+                    object {
+                        val id = newCartId
+                        val device_id = deviceId
+                        val created_at = now
+                        val updated_at = now
+                    }
                 )
                 
                 val cart = Cart(
@@ -293,9 +319,10 @@ class CartRepositoryImpl : CartRepository {
             val userCart = userCartResult.getOrNull()!!
             
             // Get anonymous cart items
-            val anonymousItems = supabase.from("cart_items")
-                .select("*")
-                .eq("cart_id", anonymousCartId)
+            val anonymousItems = supabase.postgrest["cart_items"]
+                .select {
+                    filter("cart_id", FilterOperator.EQ, anonymousCartId)
+                }
                 .decodeList<Map<String, Any>>()
             
             // Merge items
@@ -308,9 +335,10 @@ class CartRepositoryImpl : CartRepository {
             }
             
             // Delete anonymous cart
-            supabase.from("carts").delete {
-                eq("id", anonymousCartId)
-            }
+            supabase.postgrest["carts"]
+                .delete {
+                    filter("id", FilterOperator.EQ, anonymousCartId)
+                }
             
             // Get updated cart
             return@withContext getCart(userId)

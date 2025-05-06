@@ -9,8 +9,12 @@ import com.tiruvear.textiles.ui.auth.AuthActivity
 import com.tiruvear.textiles.ui.main.MainActivity
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import io.github.jan.supabase.gotrue.gotrue
+import io.github.jan.supabase.gotrue.SessionStatus
 
 class SplashActivity : AppCompatActivity() {
+    
+    private val supabase = TiruvearApp.supabaseClient
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -21,15 +25,16 @@ class SplashActivity : AppCompatActivity() {
             // Delay for at least 1 second to show splash screen
             delay(1000)
             
-            // Check if user is already logged in
-            val session = TiruvearApp.supabaseClient.auth.currentSession
-            
-            if (session != null) {
-                // User is logged in, navigate to main activity
-                startActivity(Intent(this@SplashActivity, MainActivity::class.java))
-            } else {
-                // User is not logged in, navigate to auth activity
-                startActivity(Intent(this@SplashActivity, AuthActivity::class.java))
+            // Check if user is logged in
+            when (supabase.gotrue.sessionStatus.value) {
+                is SessionStatus.Authenticated -> {
+                    // User is logged in, navigate to main activity
+                    startActivity(Intent(this@SplashActivity, MainActivity::class.java))
+                }
+                else -> {
+                    // User is not logged in, navigate to auth activity
+                    startActivity(Intent(this@SplashActivity, AuthActivity::class.java))
+                }
             }
             
             // Close splash activity
