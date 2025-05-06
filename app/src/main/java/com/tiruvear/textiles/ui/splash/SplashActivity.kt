@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.tiruvear.textiles.R
 import com.tiruvear.textiles.TiruvearApp
 import com.tiruvear.textiles.ui.auth.AuthActivity
 import com.tiruvear.textiles.ui.main.MainActivity
@@ -18,8 +19,7 @@ class SplashActivity : AppCompatActivity() {
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
-        // No need to set content view as we're using a theme with background
+        setContentView(R.layout.activity_splash)
         
         lifecycleScope.launch {
             // Delay for at least 1 second to show splash screen
