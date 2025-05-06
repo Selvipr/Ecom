@@ -1,0 +1,122 @@
+<resources>
+    <string name="app_name">Tiruvear Textiles</string>
+    
+    <!-- Auth Screen -->
+    <string name="login">Login</string>
+    <string name="register">Register</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="phone_number">Phone Number</string>
+    <string name="forgot_password">Forgot Password?</string>
+    <string name="continue_as_guest">Continue as Guest</string>
+    <string name="or">OR</string>
+    <string name="create_account">Create Account</string>
+    <string name="already_have_account">Already have an account? Login</string>
+    <string name="dont_have_account">Don\'t have an account? Register</string>
+    
+    <!-- Main Navigation -->
+    <string name="home">Home</string>
+    <string name="categories">Categories</string>
+    <string name="cart">Cart</string>
+    <string name="orders">Orders</string>
+    <string name="profile">Profile</string>
+    
+    <!-- Product Listings -->
+    <string name="featured_products">Featured Products</string>
+    <string name="new_arrivals">New Arrivals</string>
+    <string name="trending_products">Trending Products</string>
+    <string name="view_all">View All</string>
+    <string name="search_products">Search Products</string>
+    <string name="filter">Filter</string>
+    <string name="sort">Sort</string>
+    <string name="price">Price</string>
+    <string name="availability">Availability</string>
+    <string name="add_to_cart">Add to Cart</string>
+    <string name="add_to_wishlist">Add to Wishlist</string>
+    <string name="product_details">Product Details</string>
+    <string name="specifications">Specifications</string>
+    <string name="reviews">Reviews</string>
+    <string name="rating">Rating</string>
+    <string name="write_review">Write a Review</string>
+    
+    <!-- Cart and Checkout -->
+    <string name="my_cart">My Cart</string>
+    <string name="remove">Remove</string>
+    <string name="quantity">Quantity</string>
+    <string name="subtotal">Subtotal</string>
+    <string name="shipping">Shipping</string>
+    <string name="tax">Tax</string>
+    <string name="total">Total</string>
+    <string name="checkout">Checkout</string>
+    <string name="proceed_to_payment">Proceed to Payment</string>
+    <string name="shipping_address">Shipping Address</string>
+    <string name="add_new_address">Add New Address</string>
+    <string name="payment_method">Payment Method</string>
+    <string name="cash_on_delivery">Cash on Delivery</string>
+    <string name="card_payment">Card Payment</string>
+    <string name="upi_payment">UPI Payment</string>
+    <string name="apply_coupon">Apply Coupon</string>
+    <string name="order_summary">Order Summary</string>
+    <string name="place_order">Place Order</string>
+    
+    <!-- Profile and Account -->
+    <string name="my_account">My Account</string>
+    <string name="personal_information">Personal Information</string>
+    <string name="address_book">Address Book</string>
+    <string name="wishlist">Wishlist</string>
+    <string name="order_history">Order History</string>
+    <string name="settings">Settings</string>
+    <string name="logout">Logout</string>
+    <string name="first_name">First Name</string>
+    <string name="last_name">Last Name</string>
+    <string name="save">Save</string>
+    
+    <!-- Order Tracking -->
+    <string name="order_details">Order Details</string>
+    <string name="order_id">Order ID</string>
+    <string name="order_date">Order Date</string>
+    <string name="order_status">Order Status</string>
+    <string name="delivery_date">Delivery Date</string>
+    <string name="track_order">Track Order</string>
+    <string name="cancel_order">Cancel Order</string>
+    <string name="order_placed">Order Placed</string>
+    <string name="order_confirmed">Order Confirmed</string>
+    <string name="order_shipped">Order Shipped</string>
+    <string name="order_delivered">Order Delivered</string>
+    
+    <!-- Admin Strings -->
+    <string name="admin_login">Admin Login</string>
+    <string name="admin_dashboard">Dashboard</string>
+    <string name="manage_products">Manage Products</string>
+    <string name="add_product">Add Product</string>
+    <string name="edit_product">Edit Product</string>
+    <string name="manage_orders">Manage Orders</string>
+    <string name="inventory">Inventory</string>
+    <string name="customers">Customers</string>
+    <string name="reports">Reports</string>
+    <string name="product_name">Product Name</string>
+    <string name="product_description">Product Description</string>
+    <string name="product_category">Product Category</string>
+    <string name="stock">Stock</string>
+    <string name="update">Update</string>
+    <string name="delete">Delete</string>
+    
+    <!-- Error Messages -->
+    <string name="error_login">Unable to login. Please check your credentials.</string>
+    <string name="error_register">Registration failed. Please try again.</string>
+    <string name="error_invalid_email">Invalid email format</string>
+    <string name="error_invalid_password">Password must be at least 6 characters</string>
+    <string name="error_password_mismatch">Passwords do not match</string>
+    <string name="error_network">Network error. Please check your connection.</string>
+    <string name="error_loading_products">Failed to load products</string>
+    <string name="error_add_to_cart">Failed to add to cart</string>
+    <string name="error_checkout">Checkout failed. Please try again.</string>
+    
+    <!-- Success Messages -->
+    <string name="success_login">Login successful</string>
+    <string name="success_register">Registration successful</string>
+    <string name="success_add_to_cart">Added to cart</string>
+    <string name="success_order_placed">Order placed successfully</string>
+    <string name="success_profile_update">Profile updated successfully</string>
+</resources>
