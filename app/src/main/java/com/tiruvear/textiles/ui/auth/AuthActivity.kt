@@ -53,8 +53,13 @@ class AuthActivity : AppCompatActivity() {
                 binding.viewPager.currentItem = tab.position
             }
 
-            override fun onTabUnselected(tab: TabLayout.Tab) {}
-            override fun onTabReselected(tab: TabLayout.Tab) {}
+            override fun onTabUnselected(tab: TabLayout.Tab?) {
+                // Not needed
+            }
+
+            override fun onTabReselected(tab: TabLayout.Tab?) {
+                // Not needed
+            }
         })
     }
 

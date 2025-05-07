@@ -90,7 +90,8 @@ class LoginFragment : Fragment() {
         
         lifecycleScope.launch {
             try {
-                val result = authRepository.login(email, password)
+                val loginRequest = com.tiruvear.textiles.data.models.LoginRequest(email, password)
+                val result = authRepository.login(loginRequest)
                 
                 (requireActivity() as AuthActivity).hideLoading()
                 
@@ -124,7 +125,7 @@ class LoginFragment : Fragment() {
         
         lifecycleScope.launch {
             try {
-                val result = authRepository.forgotPassword(email)
+                val result = authRepository.resetPassword(email)
                 
                 (requireActivity() as AuthActivity).hideLoading()
                 

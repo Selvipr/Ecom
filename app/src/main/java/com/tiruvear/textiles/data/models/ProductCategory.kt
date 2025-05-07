@@ -7,7 +7,8 @@ data class ProductCategory(
     val name: String,
     val description: String?,
     val imageUrl: String?,
-    val parentCategoryId: String?,
-    val createdAt: Date,
-    val updatedAt: Date
+    val parentCategoryId: String? = null,
+    val displayOrder: Int = 0,
+    val createdAt: Date = Date(),
+    val updatedAt: Date = Date()
 ) 

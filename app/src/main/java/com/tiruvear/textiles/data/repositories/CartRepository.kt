@@ -2,7 +2,7 @@ package com.tiruvear.textiles.data.repositories
 
 import com.tiruvear.textiles.TiruvearApp
 import com.tiruvear.textiles.data.models.Cart
-import com.tiruvear.textiles.data.models.CartItem
+import com.tiruvear.textiles.data.models.CartItemEntity
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.FilterOperator
 import kotlinx.coroutines.Dispatchers
@@ -15,21 +15,27 @@ import kotlinx.serialization.json.put
 import io.github.jan.supabase.postgrest.query.Count
 import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.postgrest.query.Returning
+import com.tiruvear.textiles.data.models.CartItem
+import com.tiruvear.textiles.data.models.Product
 
 interface CartRepository {
     suspend fun getCart(userId: String): Result<Cart>
-    suspend fun addToCart(userId: String, productId: String, variantId: String?, quantity: Int): Result<CartItem>
-    suspend fun updateCartItem(cartItemId: String, quantity: Int): Result<CartItem>
+    suspend fun addToCart(userId: String, productId: String, variantId: String?, quantity: Int): Result<CartItemEntity>
+    suspend fun updateCartItem(cartItemId: String, quantity: Int): Result<CartItemEntity>
     suspend fun removeFromCart(cartItemId: String): Result<Unit>
     suspend fun clearCart(cartId: String): Result<Unit>
     suspend fun getCartItemCount(userId: String): Result<Int>
     suspend fun getAnonymousCart(deviceId: String): Result<Cart>
     suspend fun mergeAnonymousCart(anonymousCartId: String, userId: String): Result<Cart>
+    suspend fun getCartItems(userId: String): Result<List<CartItem>>
+    suspend fun addToCart(userId: String, productId: String, quantity: Int): Result<CartItem>
+    suspend fun getCartTotal(userId: String): Result<Double>
 }
 
 class CartRepositoryImpl : CartRepository {
     
     private val supabase = TiruvearApp.supabaseClient
+    private val productRepository = ProductRepositoryImpl()
     
     override suspend fun getCart(userId: String): Result<Cart> = withContext(Dispatchers.IO) {
         try {
@@ -89,7 +95,7 @@ class CartRepositoryImpl : CartRepository {
         }
     }
     
-    override suspend fun addToCart(userId: String, productId: String, variantId: String?, quantity: Int): Result<CartItem> = withContext(Dispatchers.IO) {
+    override suspend fun addToCart(userId: String, productId: String, variantId: String?, quantity: Int): Result<CartItemEntity> = withContext(Dispatchers.IO) {
         try {
             // Get or create cart
             val cartResult = getCart(userId)
@@ -169,7 +175,7 @@ class CartRepositoryImpl : CartRepository {
         }
     }
     
-    override suspend fun updateCartItem(cartItemId: String, quantity: Int): Result<CartItem> = withContext(Dispatchers.IO) {
+    override suspend fun updateCartItem(cartItemId: String, quantity: Int): Result<CartItemEntity> = withContext(Dispatchers.IO) {
         try {
             val now = Date()
             
@@ -347,17 +353,191 @@ class CartRepositoryImpl : CartRepository {
         }
     }
     
+    override suspend fun getCartItems(userId: String): Result<List<CartItem>> = withContext(Dispatchers.IO) {
+        try {
+            // Get cart ID or create a new one
+            val cartId = getOrCreateCartId(userId)
+            
+            // Get cart items
+            val cartItems = supabase.postgrest["cart_items"]
+                .select {
+                    filter("cart_id", FilterOperator.EQ, cartId)
+                }
+                .decodeList<Map<String, Any>>()
+            
+            // Map to cart items with product details
+            val cartItemsWithProducts = cartItems.map { cartItemData ->
+                val productId = cartItemData["product_id"] as String
+                val productResult = productRepository.getProductById(productId)
+                val product = productResult.getOrNull()
+                
+                CartItem(
+                    id = cartItemData["id"] as String,
+                    product = product ?: createPlaceholderProduct(productId),
+                    quantity = (cartItemData["quantity"] as Number).toInt(),
+                    price = (cartItemData["price"] as Number).toDouble(),
+                    cartId = cartId
+                )
+            }
+            
+            Result.success(cartItemsWithProducts)
+        } catch (e: Exception) {
+            // Return empty list on error to avoid crashes
+            Result.success(emptyList())
+        }
+    }
+    
+    override suspend fun addToCart(userId: String, productId: String, quantity: Int): Result<CartItem> = withContext(Dispatchers.IO) {
+        try {
+            // Get cart ID or create a new one
+            val cartId = getOrCreateCartId(userId)
+            
+            // Check if product already exists in cart
+            val existingCartItems = supabase.postgrest["cart_items"]
+                .select {
+                    filter("cart_id", FilterOperator.EQ, cartId)
+                    filter("product_id", FilterOperator.EQ, productId)
+                }
+                .decodeList<Map<String, Any>>()
+            
+            val cartItemId: String
+            val finalQuantity: Int
+            
+            if (existingCartItems.isNotEmpty()) {
+                // Update existing cart item
+                val existingItem = existingCartItems.first()
+                cartItemId = existingItem["id"] as String
+                finalQuantity = (existingItem["quantity"] as Number).toInt() + quantity
+                
+                supabase.postgrest["cart_items"]
+                    .update(mapOf("quantity" to finalQuantity)) {
+                        filter("id", FilterOperator.EQ, cartItemId)
+                    }
+            } else {
+                // Get product details
+                val productResult = productRepository.getProductById(productId)
+                val product = productResult.getOrNull() 
+                    ?: return@withContext Result.failure(Exception("Product not found"))
+                
+                // Create new cart item
+                cartItemId = UUID.randomUUID().toString()
+                finalQuantity = quantity
+                
+                val cartItemData = mapOf(
+                    "id" to cartItemId,
+                    "cart_id" to cartId,
+                    "product_id" to productId,
+                    "quantity" to quantity,
+                    "price" to product.price,
+                    "created_at" to Date(),
+                    "updated_at" to Date()
+                )
+                
+                supabase.postgrest["cart_items"].insert(cartItemData)
+            }
+            
+            // Return updated cart item
+            val productResult = productRepository.getProductById(productId)
+            val product = productResult.getOrNull() 
+                ?: return@withContext Result.failure(Exception("Product not found"))
+            
+            Result.success(
+                CartItem(
+                    id = cartItemId,
+                    product = product,
+                    quantity = finalQuantity,
+                    price = product.price,
+                    cartId = cartId
+                )
+            )
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    override suspend fun getCartTotal(userId: String): Result<Double> = withContext(Dispatchers.IO) {
+        try {
+            val cartItemsResult = getCartItems(userId)
+            
+            if (cartItemsResult.isSuccess) {
+                val cartItems = cartItemsResult.getOrNull() ?: emptyList()
+                val total = cartItems.sumOf { it.quantity * it.price }
+                Result.success(total)
+            } else {
+                Result.failure(cartItemsResult.exceptionOrNull() ?: Exception("Unknown error"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    // Helper methods
+    private suspend fun getOrCreateCartId(userId: String): String {
+        val existingCartId = getCartId(userId)
+        if (existingCartId != null) {
+            return existingCartId
+        }
+        
+        // Create new cart
+        val cartId = UUID.randomUUID().toString()
+        val cartData = mapOf(
+            "id" to cartId,
+            "user_id" to userId,
+            "created_at" to Date(),
+            "updated_at" to Date()
+        )
+        
+        supabase.postgrest["carts"].insert(cartData)
+        return cartId
+    }
+    
+    private suspend fun getCartId(userId: String): String? {
+        return try {
+            val carts = supabase.postgrest["carts"]
+                .select {
+                    filter("user_id", FilterOperator.EQ, userId)
+                    order("created_at", Order.DESCENDING)
+                    limit(1)
+                }
+                .decodeList<Map<String, Any>>()
+            
+            if (carts.isNotEmpty()) {
+                carts.first()["id"] as String
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+    
+    private fun createPlaceholderProduct(productId: String): Product {
+        return Product(
+            id = productId,
+            name = "Product Not Found",
+            description = "This product is no longer available",
+            basePrice = 0.0,
+            salePrice = null,
+            categoryId = "",
+            stockQuantity = 0,
+            isActive = false,
+            createdAt = Date(),
+            updatedAt = Date()
+        )
+    }
+    
     @Suppress("UNCHECKED_CAST")
-    private fun mapToCartItem(data: Map<String, Any>): CartItem {
-        return CartItem(
+    private fun mapToCartItem(data: Map<String, Any>): CartItemEntity {
+        return CartItemEntity(
             id = data["id"] as String,
             cartId = data["cart_id"] as String,
             productId = data["product_id"] as String,
             variantId = data["variant_id"] as? String,
             quantity = (data["quantity"] as Number).toInt(),
             createdAt = data["created_at"] as Date,
-            updatedAt = data["updated_at"] as Date
-            // Note: Product and variant relationships need more complex mapping
+            updatedAt = data["updated_at"] as Date,
+            product = null, // Product relationship needs to be fetched separately
+            variant = null  // Variant relationship needs to be fetched separately
         )
     }
 } 

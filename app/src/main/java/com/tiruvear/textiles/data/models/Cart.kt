@@ -9,10 +9,10 @@ data class Cart(
     val updatedAt: Date,
     
     // Relationships
-    val items: List<CartItem>? = null
+    val items: List<CartItemEntity>? = null
 )
 
-data class CartItem(
+data class CartItemEntity(
     val id: String,
     val cartId: String,
     val productId: String,

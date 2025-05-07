@@ -19,6 +19,11 @@ class TiruvearApp : Application() {
             
         const val SUPABASE_URL = "https://spgxymonqkttpzfsztvp.supabase.co"
         const val SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwZ3h5bW9ucWt0dHB6ZnN6dHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyNjk5NzEsImV4cCI6MjA2MTg0NTk3MX0.TywFD4g7rCEHaf4blMlIpclX_obKtAb_0mD1NmRH-t8"
+        
+        // Get the current user ID from session manager or preferences
+        fun getCurrentUserId(): String? {
+            return "guest_user" // Placeholder - replace with actual implementation
+        }
     }
 
     override fun onCreate() {

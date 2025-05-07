@@ -35,6 +35,7 @@
     <string name="add_to_cart">Add to Cart</string>
     <string name="add_to_wishlist">Add to Wishlist</string>
     <string name="product_details">Product Details</string>
+    <string name="product_image">Product Image</string>
     <string name="specifications">Specifications</string>
     <string name="reviews">Reviews</string>
     <string name="rating">Rating</string>
@@ -105,7 +106,7 @@
     <!-- Error Messages -->
     <string name="error_login">Unable to login. Please check your credentials.</string>
     <string name="error_register">Registration failed. Please try again.</string>
-    <string name="error_invalid_email">Invalid email format</string>
+    <string name="error_invalid_email">Please enter a valid email address</string>
     <string name="error_invalid_password">Password must be at least 6 characters</string>
     <string name="error_password_mismatch">Passwords do not match</string>
     <string name="error_network">Network error. Please check your connection.</string>
@@ -115,8 +116,35 @@
     
     <!-- Success Messages -->
     <string name="success_login">Login successful</string>
-    <string name="success_register">Registration successful</string>
+    <string name="success_register">Registration successful!</string>
     <string name="success_add_to_cart">Added to cart</string>
     <string name="success_order_placed">Order placed successfully</string>
     <string name="success_profile_update">Profile updated successfully</string>
+    
+    <!-- Additional UI Strings -->
+    <string name="banner_image">Promotional Banner</string>
+    <string name="search_hint">Search for products…</string>
+    
+    <!-- New strings for login and remember me functionality -->
+    <string name="remember_me">Remember Me</string>
+    <string name="login_to_your_account">Login to Your Account</string>
+    <string name="don_t_have_an_account">Don\'t have an account?</string>
+    <string name="create_an_account">Create an Account</string>
+    <string name="full_name">Full Name</string>
+    <string name="phone">Phone Number</string>
+    <string name="reset_password">Reset Password</string>
+    <string name="back_to_login">Back to Login</string>
+    <string name="enter_registered_email">Enter your registered email address</string>
+    <string name="submit">Submit</string>
+    
+    <!-- Profile -->
+    <string name="edit_profile">Edit Profile</string>
+    <string name="my_orders">My Orders</string>
+    <string name="my_addresses">My Addresses</string>
+    <string name="notifications">Notifications</string>
+    <string name="saved_cards">Saved Cards</string>
+    <string name="help_and_support">Help &amp; Support</string>
+    <string name="about_us">About Us</string>
+    <string name="terms_and_conditions">Terms &amp; Conditions</string>
+    <string name="privacy_policy">Privacy Policy</string>
 </resources>

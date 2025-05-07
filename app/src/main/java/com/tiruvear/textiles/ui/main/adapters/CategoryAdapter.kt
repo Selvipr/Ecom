@@ -3,6 +3,9 @@ package com.tiruvear.textiles.ui.main.adapters
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
+import com.tiruvear.textiles.R
 import com.tiruvear.textiles.data.models.ProductCategory
 import com.tiruvear.textiles.databinding.ItemCategoryBinding
 
@@ -34,7 +37,15 @@ class CategoryAdapter(
 
         fun bind(category: ProductCategory) {
             binding.tvCategoryName.text = category.name
-            // Handle image loading if needed
+            
+            // Load image with Glide
+            Glide.with(binding.root.context)
+                .load(category.imageUrl)
+                .transition(DrawableTransitionOptions.withCrossFade())
+                .placeholder(R.drawable.placeholder_image) 
+                .error(R.drawable.placeholder_image)
+                .centerCrop()
+                .into(binding.ivCategory)
         }
     }
 } 

@@ -1,13 +1,14 @@
 package com.tiruvear.textiles.data.models
 
-import java.util.Date
-
+/**
+ * Model class representing a user in the app
+ */
 data class User(
     val id: String,
+    val name: String,
     val email: String,
-    val phone: String,
-    val firstName: String,
-    val lastName: String,
-    val createdAt: Date,
-    val updatedAt: Date
+    val phone: String? = null,
+    val address: String? = null,
+    val profileImageUrl: String? = null,
+    val isVerified: Boolean = false
 ) 

@@ -9,29 +9,120 @@
         android:id="@+id/navigation_home"
         android:name="com.tiruvear.textiles.ui.main.home.HomeFragment"
         android:label="@string/home"
-        tools:layout="@layout/fragment_home" />
+        tools:layout="@layout/fragment_home">
+        <action
+            android:id="@+id/action_navigation_home_to_productListFragment"
+            app:destination="@id/productListFragment" />
+        <action
+            android:id="@+id/action_navigation_home_to_productDetailFragment"
+            app:destination="@id/productDetailFragment" />
+        <action
+            android:id="@+id/action_navigation_home_to_navigation_cart"
+            app:destination="@id/navigation_cart" />
+    </fragment>
 
     <fragment
         android:id="@+id/navigation_categories"
         android:name="com.tiruvear.textiles.ui.main.categories.CategoriesFragment"
         android:label="@string/categories"
-        tools:layout="@layout/fragment_categories" />
+        tools:layout="@layout/fragment_categories">
+        <action
+            android:id="@+id/action_categoriesFragment_to_productListFragment"
+            app:destination="@id/productListFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/navigation_cart"
         android:name="com.tiruvear.textiles.ui.main.cart.CartFragment"
         android:label="@string/cart"
-        tools:layout="@layout/fragment_cart" />
+        tools:layout="@layout/fragment_cart">
+        <action
+            android:id="@+id/action_navigation_cart_to_checkoutFragment"
+            app:destination="@id/checkoutFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/navigation_orders"
         android:name="com.tiruvear.textiles.ui.main.orders.OrdersFragment"
         android:label="@string/orders"
-        tools:layout="@layout/fragment_orders" />
+        tools:layout="@layout/fragment_orders">
+        <action
+            android:id="@+id/action_navigation_orders_to_orderDetailFragment"
+            app:destination="@id/orderDetailFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/navigation_profile"
         android:name="com.tiruvear.textiles.ui.main.profile.ProfileFragment"
         android:label="@string/profile"
         tools:layout="@layout/fragment_profile" />
+        
+    <!-- Product List Fragment -->
+    <fragment
+        android:id="@+id/productListFragment"
+        android:name="com.tiruvear.textiles.ui.main.products.ProductListFragment"
+        android:label="Products"
+        tools:layout="@layout/fragment_product_list">
+        <action
+            android:id="@+id/action_productListFragment_to_productDetailFragment"
+            app:destination="@id/productDetailFragment" />
+        <action
+            android:id="@+id/action_productListFragment_to_cartFragment"
+            app:destination="@id/navigation_cart" />
+        <argument
+            android:name="categoryId"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="categoryName"
+            app:argType="string"
+            app:nullable="true" />
+    </fragment>
+    
+    <!-- Product Detail Fragment -->
+    <fragment
+        android:id="@+id/productDetailFragment"
+        android:name="com.tiruvear.textiles.ui.main.products.ProductDetailFragment"
+        android:label="Product Details"
+        tools:layout="@layout/fragment_product_detail">
+        <action
+            android:id="@+id/action_productDetailFragment_to_cartFragment"
+            app:destination="@id/navigation_cart" />
+        <argument
+            android:name="productId"
+            app:argType="string" />
+    </fragment>
+    
+    <!-- Checkout Fragment -->
+    <fragment
+        android:id="@+id/checkoutFragment"
+        android:name="com.tiruvear.textiles.ui.main.checkout.CheckoutFragment"
+        android:label="Checkout"
+        tools:layout="@layout/fragment_checkout">
+        <action
+            android:id="@+id/action_checkoutFragment_to_orderConfirmationFragment"
+            app:destination="@id/orderConfirmationFragment" />
+    </fragment>
+    
+    <!-- Order Detail Fragment -->
+    <fragment
+        android:id="@+id/orderDetailFragment"
+        android:name="com.tiruvear.textiles.ui.main.orders.OrderDetailFragment"
+        android:label="Order Details"
+        tools:layout="@layout/fragment_order_detail">
+        <argument
+            android:name="orderId"
+            app:argType="string" />
+    </fragment>
+    
+    <!-- Order Confirmation Fragment -->
+    <fragment
+        android:id="@+id/orderConfirmationFragment"
+        android:name="com.tiruvear.textiles.ui.main.checkout.OrderConfirmationFragment"
+        android:label="Order Confirmation"
+        tools:layout="@layout/fragment_order_confirmation">
+        <argument
+            android:name="orderId"
+            app:argType="string" />
+    </fragment>
 </navigation> 
