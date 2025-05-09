@@ -10,6 +10,7 @@ import com.tiruvear.textiles.R
 import com.tiruvear.textiles.TiruvearApp
 import com.tiruvear.textiles.ui.auth.AuthActivity
 import com.tiruvear.textiles.ui.main.MainActivity
+import com.tiruvear.textiles.utils.DatabaseTester
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import io.github.jan.supabase.gotrue.gotrue
@@ -33,6 +34,22 @@ class SplashActivity : AppCompatActivity() {
                     
                     // Access supabase client safely
                     val supabase = TiruvearApp.supabaseClient
+                    
+                    // Validate database schema
+                    try {
+                        DatabaseTester.ensureDatabaseSetup(this@SplashActivity)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Database validation failed", e)
+                        // Show warning but continue app startup
+                        Toast.makeText(
+                            this@SplashActivity,
+                            "Warning: Database validation failed. Some features may not work properly.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                    
+                    // Delay a bit more to allow database check to complete
+                    delay(500)
                     
                     // Check if user is logged in
                     when (supabase.gotrue.sessionStatus.value) {

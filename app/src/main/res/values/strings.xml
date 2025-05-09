@@ -40,6 +40,14 @@
     <string name="reviews">Reviews</string>
     <string name="rating">Rating</string>
     <string name="write_review">Write a Review</string>
+    <string name="back">Back</string>
+    <string name="buy_now">Buy Now</string>
+    <string name="in_stock">In Stock</string>
+    <string name="out_of_stock">Out of Stock</string>
+    <string name="similar_products">Similar Products</string>
+    <string name="continue_shopping">Continue Shopping</string>
+    <string name="view_cart">View Cart</string>
+    <string name="added_to_cart">Added to Cart</string>
     
     <!-- Cart and Checkout -->
     <string name="my_cart">My Cart</string>
@@ -60,6 +68,12 @@
     <string name="apply_coupon">Apply Coupon</string>
     <string name="order_summary">Order Summary</string>
     <string name="place_order">Place Order</string>
+    <string name="cart_empty">Your cart is empty</string>
+    <string name="discount">Discount</string>
+    <string name="coupon_code">Coupon Code</string>
+    <string name="apply">Apply</string>
+    <string name="confirm_order">Confirm Order</string>
+    <string name="processing_order">Processing your order...</string>
     
     <!-- Profile and Account -->
     <string name="my_account">My Account</string>
@@ -91,6 +105,10 @@
     <string name="tracking_number">Tracking Number:</string>
     <string name="reorder">Reorder</string>
     <string name="track_shipment">Track Shipment</string>
+    <string name="order_confirmation">Order Confirmation</string>
+    <string name="order_success">Your order has been placed successfully!</string>
+    <string name="continue_to_shop">Continue to Shop</string>
+    <string name="view_order">View Order</string>
     
     <!-- Admin Strings -->
     <string name="admin_login">Admin Login</string>

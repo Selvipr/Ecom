@@ -6,29 +6,102 @@ import com.tiruvear.textiles.data.models.Order
 import com.tiruvear.textiles.data.models.OrderItem
 import com.tiruvear.textiles.data.models.OrderStatus
 import com.tiruvear.textiles.data.models.Product
+import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.FilterOperator
+import io.github.jan.supabase.postgrest.query.Order as QueryOrder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.Date
 import java.util.UUID
-import java.util.Calendar
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import io.github.jan.supabase.postgrest.query.Returning
 
 class OrderRepositoryImpl : OrderRepository {
     
     private val TAG = "OrderRepositoryImpl"
-    
-    // In a real app, this would be connected to a database
-    private val mockOrders = createMockOrders()
+    private val supabase = TiruvearApp.supabaseClient
+    private val productRepository = ProductRepositoryImpl()
+    private val cartRepository = CartRepositoryImpl()
     
     override suspend fun getOrderById(orderId: String): Result<Order> = withContext(Dispatchers.IO) {
         try {
-            // For this example app, we'll just return mock data
-            val order = mockOrders.find { it.id == orderId }
-            if (order != null) {
-                Result.success(order)
-            } else {
-                Log.e(TAG, "Order not found with ID: $orderId")
-                Result.failure(Exception("Order not found"))
+            // Get the order from Supabase
+            val orderResponse = supabase.postgrest["orders"]
+                .select {
+                    filter("id", FilterOperator.EQ, orderId)
+                }
+            
+            val orders = orderResponse.decodeList<Map<String, Any?>>()
+            
+            if (orders.isEmpty()) {
+                return@withContext Result.failure(Exception("Order not found"))
             }
+            
+            val orderData = orders.first()
+            
+            // Get order items
+            val orderItemsResponse = supabase.postgrest["order_items"]
+                .select {
+                    filter("order_id", FilterOperator.EQ, orderId)
+                }
+            
+            val orderItemsData = orderItemsResponse.decodeList<Map<String, Any?>>()
+            
+            val orderItems = mutableListOf<OrderItem>()
+            
+            for (itemData in orderItemsData) {
+                val productId = itemData["product_id"] as String
+                val productResult = productRepository.getProductById(productId)
+                
+                if (productResult.isSuccess) {
+                    val product = productResult.getOrNull()!!
+                    val price = (itemData["price"] as Number).toDouble()
+                    val quantity = (itemData["quantity"] as Number).toInt()
+                    
+                    orderItems.add(
+                        OrderItem(
+                            product = product,
+                            quantity = quantity,
+                            price = price
+                        )
+                    )
+                }
+            }
+            
+            // Get address information
+            val addressId = orderData["address_id"] as String
+            val addressResponse = supabase.postgrest["addresses"]
+                .select {
+                    filter("id", FilterOperator.EQ, addressId)
+                }
+            
+            val addresses = addressResponse.decodeList<Map<String, Any?>>()
+            val addressData = if (addresses.isNotEmpty()) addresses.first() else null
+            
+            val shippingAddress = if (addressData != null) {
+                "${addressData["name"]}, ${addressData["address_line1"]}, " +
+                "${addressData["address_line2"] ?: ""}, ${addressData["city"]}, " +
+                "${addressData["state"]} ${addressData["postal_code"]}, ${addressData["country"]}"
+            } else {
+                "Address not found"
+            }
+            
+            // Create order object
+            val order = Order(
+                id = orderId,
+                userId = orderData["user_id"] as String,
+                items = orderItems,
+                totalAmount = (orderData["total_amount"] as Number).toDouble(),
+                shippingAddress = shippingAddress,
+                status = OrderStatus.valueOf((orderData["order_status"] as String).uppercase()),
+                paymentMethod = orderData["payment_method"] as String,
+                orderDate = Date((orderData["created_at"] as String).toLong()),
+                deliveryDate = null, // Not stored in our DB schema
+                trackingNumber = null // Not stored in our DB schema
+            )
+            
+            Result.success(order)
         } catch (e: Exception) {
             Log.e(TAG, "Error getting order: ${e.message}", e)
             Result.failure(e)
@@ -37,8 +110,84 @@ class OrderRepositoryImpl : OrderRepository {
     
     override suspend fun getOrdersByUser(userId: String): Result<List<Order>> = withContext(Dispatchers.IO) {
         try {
-            // For this example app, we'll just return mock data
-            Result.success(mockOrders)
+            // Get orders from Supabase
+            val orderResponse = supabase.postgrest["orders"]
+                .select {
+                    filter("user_id", FilterOperator.EQ, userId)
+                    order("created_at", QueryOrder.DESCENDING)
+                }
+            
+            val ordersData = orderResponse.decodeList<Map<String, Any?>>()
+            val orders = mutableListOf<Order>()
+            
+            for (orderData in ordersData) {
+                val orderId = orderData["id"] as String
+                
+                // Get order items
+                val orderItemsResponse = supabase.postgrest["order_items"]
+                    .select {
+                        filter("order_id", FilterOperator.EQ, orderId)
+                    }
+                
+                val orderItemsData = orderItemsResponse.decodeList<Map<String, Any?>>()
+                
+                val orderItems = mutableListOf<OrderItem>()
+                
+                for (itemData in orderItemsData) {
+                    val productId = itemData["product_id"] as String
+                    val productResult = productRepository.getProductById(productId)
+                    
+                    if (productResult.isSuccess) {
+                        val product = productResult.getOrNull()!!
+                        val price = (itemData["price"] as Number).toDouble()
+                        val quantity = (itemData["quantity"] as Number).toInt()
+                        
+                        orderItems.add(
+                            OrderItem(
+                                product = product,
+                                quantity = quantity,
+                                price = price
+                            )
+                        )
+                    }
+                }
+                
+                // Get address information
+                val addressId = orderData["address_id"] as String
+                val addressResponse = supabase.postgrest["addresses"]
+                    .select {
+                        filter("id", FilterOperator.EQ, addressId)
+                    }
+                
+                val addresses = addressResponse.decodeList<Map<String, Any?>>()
+                val addressData = if (addresses.isNotEmpty()) addresses.first() else null
+                
+                val shippingAddress = if (addressData != null) {
+                    "${addressData["name"]}, ${addressData["address_line1"]}, " +
+                    "${addressData["address_line2"] ?: ""}, ${addressData["city"]}, " +
+                    "${addressData["state"]} ${addressData["postal_code"]}, ${addressData["country"]}"
+                } else {
+                    "Address not found"
+                }
+                
+                // Create order object
+                val order = Order(
+                    id = orderId,
+                    userId = userId,
+                    items = orderItems,
+                    totalAmount = (orderData["total_amount"] as Number).toDouble(),
+                    shippingAddress = shippingAddress,
+                    status = OrderStatus.valueOf((orderData["order_status"] as String).uppercase()),
+                    paymentMethod = orderData["payment_method"] as String,
+                    orderDate = Date((orderData["created_at"] as String).toLong()),
+                    deliveryDate = null, // Not stored in our DB schema
+                    trackingNumber = null // Not stored in our DB schema
+                )
+                
+                orders.add(order)
+            }
+            
+            Result.success(orders)
         } catch (e: Exception) {
             Log.e(TAG, "Error getting orders by user: ${e.message}", e)
             Result.failure(e)
@@ -47,24 +196,19 @@ class OrderRepositoryImpl : OrderRepository {
     
     override suspend fun updateOrderStatus(orderId: String, status: String): Result<Order> = withContext(Dispatchers.IO) {
         try {
-            // Find the order to update
-            val orderIndex = mockOrders.indexOfFirst { it.id == orderId }
-            if (orderIndex >= 0) {
-                val oldOrder = mockOrders[orderIndex]
-                val newStatus = OrderStatus.valueOf(status.uppercase())
-                
-                // Create updated order with new status
-                val updatedOrder = oldOrder.copy(status = newStatus)
-                
-                // Update our local list (in a real app, this would update the database)
-                val mutableList = mockOrders.toMutableList()
-                mutableList[orderIndex] = updatedOrder
-                
-                Result.success(updatedOrder)
-            } else {
-                Log.e(TAG, "Order not found for status update: $orderId")
-                Result.failure(Exception("Order not found"))
+            // Update order status in Supabase
+            val updateData = buildJsonObject {
+                put("order_status", status.lowercase())
+                put("updated_at", Date().time.toString())
             }
+            
+            supabase.postgrest["orders"]
+                .update(updateData) {
+                    filter("id", FilterOperator.EQ, orderId)
+                }
+            
+            // Get the updated order
+            return@withContext getOrderById(orderId)
         } catch (e: Exception) {
             Log.e(TAG, "Error updating order status: ${e.message}", e)
             Result.failure(e)
@@ -73,23 +217,19 @@ class OrderRepositoryImpl : OrderRepository {
     
     override suspend fun cancelOrder(orderId: String): Result<Order> = withContext(Dispatchers.IO) {
         try {
-            // Find the order to update
-            val orderIndex = mockOrders.indexOfFirst { it.id == orderId }
-            if (orderIndex >= 0) {
-                val oldOrder = mockOrders[orderIndex]
-                
-                // Create updated order with cancelled status
-                val updatedOrder = oldOrder.copy(status = OrderStatus.CANCELLED)
-                
-                // Update our local list (in a real app, this would update the database)
-                val mutableList = mockOrders.toMutableList()
-                mutableList[orderIndex] = updatedOrder
-                
-                Result.success(updatedOrder)
-            } else {
-                Log.e(TAG, "Order not found for cancellation: $orderId")
-                Result.failure(Exception("Order not found"))
+            // Update order status to cancelled in Supabase
+            val updateData = buildJsonObject {
+                put("order_status", "cancelled")
+                put("updated_at", Date().time.toString())
             }
+            
+            supabase.postgrest["orders"]
+                .update(updateData) {
+                    filter("id", FilterOperator.EQ, orderId)
+                }
+            
+            // Get the updated order
+            return@withContext getOrderById(orderId)
         } catch (e: Exception) {
             Log.e(TAG, "Error cancelling order: ${e.message}", e)
             Result.failure(e)
@@ -98,8 +238,8 @@ class OrderRepositoryImpl : OrderRepository {
     
     override suspend fun getUserOrders(): Result<List<Order>> = withContext(Dispatchers.IO) {
         try {
-            // For a demo app, just return mock orders
-            Result.success(mockOrders)
+            val userId = TiruvearApp.getCurrentUserId() ?: return@withContext Result.failure(Exception("User not logged in"))
+            return@withContext getOrdersByUser(userId)
         } catch (e: Exception) {
             Log.e(TAG, "Error getting user orders: ${e.message}", e)
             Result.failure(e)
@@ -115,267 +255,72 @@ class OrderRepositoryImpl : OrderRepository {
         discountAmount: Double
     ): Result<Order> = withContext(Dispatchers.IO) {
         try {
-            // In a real app, this would create an order in the database
-            // For our example, we'll just create a mock order
-            val orderId = "ORD-" + UUID.randomUUID().toString().substring(0, 8)
-            val order = Order(
-                id = orderId,
-                userId = userId,
-                items = listOf(
-                    OrderItem(
-                        product = Product(
-                            id = "P1",
-                            name = "Cotton Saree",
-                            description = "Beautiful cotton saree",
-                            basePrice = 1499.0,
-                            salePrice = 1299.0,
-                            categoryId = "1",
-                            stockQuantity = 10,
-                            isActive = true,
-                            createdAt = Date(),
-                            updatedAt = Date()
-                        ),
-                        quantity = 1,
-                        price = 1299.0
-                    )
-                ),
-                totalAmount = 1299.0 + shippingCharge - discountAmount,
-                shippingAddress = "123 Main St, Coimbatore, TN 641001",
-                status = OrderStatus.PENDING,
-                paymentMethod = paymentMethod,
-                orderDate = Date(),
-                deliveryDate = null,
-                trackingNumber = null
-            )
+            // Get cart items
+            val cartItemsResult = cartRepository.getCartItems(userId)
+            if (cartItemsResult.isFailure) {
+                return@withContext Result.failure(Exception("Failed to get cart items"))
+            }
             
-            // Add to our mock list
-            val mutableList = mockOrders.toMutableList()
-            mutableList.add(0, order)
+            val cartItems = cartItemsResult.getOrNull()!!
             
-            Result.success(order)
+            if (cartItems.isEmpty()) {
+                return@withContext Result.failure(Exception("Cart is empty"))
+            }
+            
+            // Calculate subtotal
+            val subtotal = cartItems.sumOf { it.price * it.quantity }
+            
+            // Calculate total amount
+            val totalAmount = subtotal + shippingCharge - discountAmount
+            
+            // Create order in Supabase
+            val orderId = UUID.randomUUID().toString()
+            val now = Date()
+            
+            val orderData = buildJsonObject {
+                put("id", orderId)
+                put("user_id", userId)
+                put("address_id", addressId)
+                put("payment_method", paymentMethod)
+                put("payment_status", "pending")
+                put("order_status", "placed")
+                put("subtotal", subtotal.toString())
+                put("shipping_charge", shippingCharge.toString())
+                put("discount_amount", discountAmount.toString())
+                put("tax_amount", "0")
+                put("total_amount", totalAmount.toString())
+                put("created_at", now.time.toString())
+                put("updated_at", now.time.toString())
+            }
+            
+            supabase.postgrest["orders"]
+                .insert(orderData, returning = Returning.MINIMAL)
+            
+            // Create order items
+            for (item in cartItems) {
+                val orderItemId = UUID.randomUUID().toString()
+                val orderItemData = buildJsonObject {
+                    put("id", orderItemId)
+                    put("order_id", orderId)
+                    put("product_id", item.product.id)
+                    put("variant_id", null)
+                    put("quantity", item.quantity)
+                    put("price", item.price.toString())
+                    put("created_at", now.time.toString())
+                }
+                
+                supabase.postgrest["order_items"]
+                    .insert(orderItemData, returning = Returning.MINIMAL)
+            }
+            
+            // Clear the cart after order creation
+            cartRepository.clearCart(cartId)
+            
+            // Get the created order
+            return@withContext getOrderById(orderId)
         } catch (e: Exception) {
             Log.e(TAG, "Error creating order: ${e.message}", e)
             Result.failure(e)
         }
-    }
-    
-    // Helper method to create mock orders for testing
-    private fun createMockOrders(): List<Order> {
-        val cal = Calendar.getInstance()
-        val currentDate = cal.time
-        
-        // Create dates for various orders
-        cal.add(Calendar.DAY_OF_MONTH, -2) 
-        val twoDaysAgo = cal.time
-        
-        cal.add(Calendar.DAY_OF_MONTH, -3)
-        val fiveDaysAgo = cal.time
-        
-        cal.add(Calendar.DAY_OF_MONTH, -5)
-        val tenDaysAgo = cal.time
-        
-        cal.add(Calendar.DAY_OF_MONTH, -10)
-        val twentyDaysAgo = cal.time
-        
-        // Create a future date for delivery
-        cal.setTime(currentDate)
-        cal.add(Calendar.DAY_OF_MONTH, 3)
-        val deliveryDate = cal.time
-        
-        return listOf(
-            Order(
-                id = "ORD-12345678",
-                userId = "user123",
-                items = listOf(
-                    OrderItem(
-                        product = Product(
-                            id = "P1",
-                            name = "Cotton Saree",
-                            description = "Beautiful cotton saree",
-                            basePrice = 1499.0,
-                            salePrice = 1299.0,
-                            categoryId = "1",
-                            stockQuantity = 10,
-                            isActive = true,
-                            createdAt = currentDate,
-                            updatedAt = currentDate
-                        ),
-                        quantity = 1,
-                        price = 1299.0
-                    ),
-                    OrderItem(
-                        product = Product(
-                            id = "P2",
-                            name = "Silk Dhoti",
-                            description = "Premium silk dhoti",
-                            basePrice = 899.0,
-                            salePrice = null,
-                            categoryId = "2",
-                            stockQuantity = 15,
-                            isActive = true,
-                            createdAt = currentDate,
-                            updatedAt = currentDate
-                        ),
-                        quantity = 2,
-                        price = 899.0
-                    )
-                ),
-                totalAmount = 3097.0,
-                shippingAddress = "123 Main St, Coimbatore, TN 641001",
-                status = OrderStatus.PROCESSING,
-                paymentMethod = "Cash on Delivery",
-                orderDate = currentDate,
-                deliveryDate = null,
-                trackingNumber = null
-            ),
-            Order(
-                id = "ORD-23456789",
-                userId = "user123",
-                items = listOf(
-                    OrderItem(
-                        product = Product(
-                            id = "P3",
-                            name = "Fancy Saree",
-                            description = "Elegant fancy saree",
-                            basePrice = 2499.0,
-                            salePrice = 1999.0,
-                            categoryId = "1",
-                            stockQuantity = 5,
-                            isActive = true,
-                            createdAt = twoDaysAgo,
-                            updatedAt = twoDaysAgo
-                        ),
-                        quantity = 1,
-                        price = 1999.0
-                    )
-                ),
-                totalAmount = 1999.0,
-                shippingAddress = "456 Oak St, Chennai, TN 600001",
-                status = OrderStatus.SHIPPED,
-                paymentMethod = "Credit Card",
-                orderDate = twoDaysAgo,
-                deliveryDate = deliveryDate,
-                trackingNumber = "TN-987654321"
-            ),
-            Order(
-                id = "ORD-34567890",
-                userId = "user123",
-                items = listOf(
-                    OrderItem(
-                        product = Product(
-                            id = "P4",
-                            name = "Traditional Veshti",
-                            description = "High-quality traditional veshti",
-                            basePrice = 1299.0,
-                            salePrice = 999.0,
-                            categoryId = "2",
-                            stockQuantity = 8,
-                            isActive = true,
-                            createdAt = fiveDaysAgo,
-                            updatedAt = fiveDaysAgo
-                        ),
-                        quantity = 1,
-                        price = 999.0
-                    ),
-                    OrderItem(
-                        product = Product(
-                            id = "P5",
-                            name = "Cotton Shirt",
-                            description = "Comfortable cotton shirt",
-                            basePrice = 799.0,
-                            salePrice = 599.0,
-                            categoryId = "3",
-                            stockQuantity = 20,
-                            isActive = true,
-                            createdAt = fiveDaysAgo,
-                            updatedAt = fiveDaysAgo
-                        ),
-                        quantity = 2,
-                        price = 599.0
-                    )
-                ),
-                totalAmount = 2197.0,
-                shippingAddress = "789 Pine St, Madurai, TN 625001",
-                status = OrderStatus.DELIVERED,
-                paymentMethod = "UPI",
-                orderDate = fiveDaysAgo,
-                deliveryDate = twoDaysAgo,
-                trackingNumber = "TN-876543210"
-            ),
-            Order(
-                id = "ORD-45678901",
-                userId = "user123",
-                items = listOf(
-                    OrderItem(
-                        product = Product(
-                            id = "P6",
-                            name = "Silk Saree",
-                            description = "Premium silk saree",
-                            basePrice = 5999.0,
-                            salePrice = 4999.0,
-                            categoryId = "1",
-                            stockQuantity = 3,
-                            isActive = true,
-                            createdAt = tenDaysAgo,
-                            updatedAt = tenDaysAgo
-                        ),
-                        quantity = 1,
-                        price = 4999.0
-                    )
-                ),
-                totalAmount = 4999.0,
-                shippingAddress = "101 Maple St, Trichy, TN 620001",
-                status = OrderStatus.CANCELLED,
-                paymentMethod = "Net Banking",
-                orderDate = tenDaysAgo,
-                deliveryDate = null,
-                trackingNumber = null
-            ),
-            Order(
-                id = "ORD-56789012",
-                userId = "user123",
-                items = listOf(
-                    OrderItem(
-                        product = Product(
-                            id = "P7",
-                            name = "Designer Kurta",
-                            description = "Designer kurta for special occasions",
-                            basePrice = 1899.0,
-                            salePrice = 1699.0,
-                            categoryId = "4",
-                            stockQuantity = 7,
-                            isActive = true,
-                            createdAt = twentyDaysAgo,
-                            updatedAt = twentyDaysAgo
-                        ),
-                        quantity = 1,
-                        price = 1699.0
-                    ),
-                    OrderItem(
-                        product = Product(
-                            id = "P8",
-                            name = "Cotton Pants",
-                            description = "Comfortable cotton pants",
-                            basePrice = 1099.0,
-                            salePrice = 899.0,
-                            categoryId = "5",
-                            stockQuantity = 12,
-                            isActive = true,
-                            createdAt = twentyDaysAgo,
-                            updatedAt = twentyDaysAgo
-                        ),
-                        quantity = 1,
-                        price = 899.0
-                    )
-                ),
-                totalAmount = 2598.0,
-                shippingAddress = "202 Cedar St, Salem, TN 636001",
-                status = OrderStatus.DELIVERED,
-                paymentMethod = "Credit Card",
-                orderDate = twentyDaysAgo,
-                deliveryDate = tenDaysAgo,
-                trackingNumber = "TN-765432109"
-            )
-        )
     }
 } 

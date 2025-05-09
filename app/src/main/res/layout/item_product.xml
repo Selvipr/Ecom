@@ -32,7 +32,7 @@
             android:layout_marginEnd="12dp"
             android:ellipsize="end"
             android:maxLines="2"
-            android:textColor="@android:color/black"
+            android:textColor="@color/text_primary"
             android:textSize="16sp"
             android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
@@ -46,7 +46,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
             android:layout_marginTop="4dp"
-            android:textColor="@android:color/black"
+            android:textColor="@color/text_primary"
             android:textSize="16sp"
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
@@ -59,7 +59,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_marginTop="4dp"
-            android:textColor="@android:color/darker_gray"
+            android:textColor="@color/text_secondary"
             android:textSize="14sp"
             android:textStyle="italic"
             app:layout_constraintBottom_toBottomOf="@id/tv_product_price"
@@ -77,27 +77,29 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tv_product_price">
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_add_to_cart"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="4dp"
                 android:layout_weight="1"
-                android:background="@color/colorPrimary"
-                android:text="Add to Cart"
+                android:backgroundTint="@color/colorPrimary"
+                android:text="@string/add_to_cart"
                 android:textColor="@android:color/white"
-                android:textSize="12sp" />
+                android:textSize="12sp"
+                app:cornerRadius="4dp" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_buy_now"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
                 android:layout_weight="1"
-                android:background="@color/colorAccent"
-                android:text="Buy Now"
+                android:backgroundTint="@color/colorAccent"
+                android:text="@string/buy_now"
                 android:textColor="@android:color/white"
-                android:textSize="12sp" />
+                android:textSize="12sp"
+                app:cornerRadius="4dp" />
         </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>

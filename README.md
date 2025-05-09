@@ -1,6 +1,51 @@
-# Tiruvear Textiles E-Commerce App
+# Tiruvear Textiles - E-commerce App
 
-A modern E-Commerce Android application for Tiruvear Textiles with Supabase integration.
+## Features Implemented
+
+### Product Display and Navigation
+- Product List screen showing all products in a grid layout
+- Product Detail screen with detailed information
+- Category-based browsing
+- Navigation between screens (Home → Categories → Products → Product Detail)
+
+### Shopping Cart Functionality
+- Add to Cart button works from both Product List and Product Detail screens
+- Quantity selection in Product Detail screen
+- Cart badge updates with item count
+- Cart screen shows all added items
+- Ability to change quantities in cart
+- Ability to remove items from cart
+
+### Checkout Flow
+- Complete buying flow implemented
+- Cart totals calculation with subtotal, shipping, and optional discounts
+- Coupon code application
+- Checkout process with order confirmation
+- Order summary and details
+
+### UI Enhancements
+- Visual feedback for actions (loading indicators, dialogs)
+- Confirmation dialogs for important actions
+- Stock quantity display and validation
+
+## How to Use
+
+1. Browse products from the home screen or categories tab
+2. Click on a product to view details
+3. Adjust quantity and click "Add to Cart" or "Buy Now"
+4. In Cart screen, review items and modify quantities if needed
+5. Apply coupon codes (try WELCOME10, TIRUVEAR20, or FREESHIP)
+6. Click Checkout to complete the purchase
+7. View order confirmation with order details
+
+## Technical Implementation Details
+
+The app implements a complete e-commerce buying flow with:
+- Kotlin coroutines for async operations
+- Repository pattern for data management
+- MVVM architecture
+- Navigation component for screen navigation
+- Material Design UI components
 
 ## Features
 
@@ -42,45 +87,27 @@ A modern E-Commerce Android application for Tiruvear Textiles with Supabase inte
 1. Clone the repository
 2. Open the project in Android Studio
 3. Sync Gradle dependencies
-4. Build and run the app
+4. Set up Supabase backend (see [Supabase Setup](#supabase-setup) below)
+5. Build and run the app
 
-### Database Setup
+## Supabase Setup
 
-Before using the app, you need to set up the database tables in Supabase:
+This app uses Supabase as its backend service. To set up Supabase:
 
-1. Log in to your Supabase dashboard
-2. Go to the SQL Editor
-3. Copy and paste the contents of the `users_table.sql` file
-4. Run the SQL script to create the necessary tables and policies
+1. Create a Supabase account at [https://supabase.com](https://supabase.com)
+2. Create a new project
+3. Navigate to the SQL Editor and run the database setup script in `supabase/database_setup.sql`
+4. Update the Supabase URL and API Key in `TiruvearApp.kt`
 
-### Troubleshooting Registration Issues
+For detailed Supabase setup instructions, see `supabase/setup_instructions.md`.
 
-If you encounter "Failed to create user" errors during registration, check the following:
+### Database Schema
 
-1. Make sure the Supabase URL and API key in `TiruvearApp.kt` are correct
-2. Verify that the users table exists in your Supabase database
-3. Check that RLS (Row Level Security) policies are properly set up
-4. Ensure your app has a network connection to Supabase
+The app uses the following tables in Supabase:
 
-### Common Supabase Issues
-
-1. **Rate limiting**: Supabase has built-in rate limiting. Wait at least 1 minute between registration attempts.
-2. **User table not found**: Make sure you've run the SQL script to create the users table.
-3. **Permission errors**: Ensure the RLS policies are correctly set up.
-
-## Supabase Integration
-
-The app uses Supabase for backend services:
-
-- **Authentication**: User login, registration, and password reset
-- **Database**: Product catalog, user data, carts, orders
-- **Storage**: Product images and assets
-
-## Database Schema
-
-- **users**: User profiles
-- **products**: Product information
+- **profiles**: User profiles linked to auth.users
 - **product_categories**: Product categories
+- **products**: Product information
 - **product_images**: Product images
 - **product_variants**: Product variants (size, color, etc.)
 - **carts**: Shopping carts
@@ -89,6 +116,41 @@ The app uses Supabase for backend services:
 - **order_items**: Items in orders
 - **addresses**: User shipping addresses
 - **reviews**: Product reviews
+
+### Data Storage
+
+All data is persistently stored in Supabase:
+
+- **User data**: Authentication and profiles table
+- **Products**: Products and related tables
+- **Cart**: Carts and cart_items tables
+- **Orders**: Orders and order_items tables
+
+### Row Level Security (RLS)
+
+Supabase RLS policies are used to secure data:
+
+- Product and category data is readable by everyone
+- Cart data is only accessible by the cart owner
+- Order data is only accessible by the order owner
+- User data is only accessible by the user themselves
+
+## Troubleshooting
+
+### Supabase Connection Issues
+
+If you encounter issues connecting to Supabase:
+
+1. Make sure the Supabase URL and API key in `TiruvearApp.kt` are correct
+2. Check that you've run the database setup script
+3. Verify your internet connection
+4. Check the Supabase dashboard for service status
+
+### Common Errors
+
+- **"Failed to create user"**: Check Supabase authentication settings
+- **"Failed to load products"**: Check database setup and RLS policies
+- **"Failed to add to cart"**: Check cart table schema and RLS policies
 
 ## License
 

@@ -148,9 +148,16 @@ class CartFragment : BaseFragment<FragmentCartBinding>() {
             try {
                 val userId = getCurrentUserId() ?: "guest_user"
                 
-                // For simplicity, we'll use a dummy address ID and cart ID
+                // Check if we need to clear the cart after order creation
+                val cartItemResult = withContext(Dispatchers.IO) {
+                    cartRepository.getCartItems(userId)
+                }
+                
+                val cartItems = cartItemResult.getOrNull() ?: emptyList()
+                val cartId = if (cartItems.isNotEmpty()) cartItems.first().cartId else "cart_${UUID.randomUUID().toString().substring(0, 8)}"
+                
+                // For simplicity, we'll use a dummy address ID
                 val addressId = "addr_" + UUID.randomUUID().toString().substring(0, 8)
-                val cartId = "cart_" + UUID.randomUUID().toString().substring(0, 8)
                 
                 // Create the order
                 val result = withContext(Dispatchers.IO) {
@@ -169,9 +176,7 @@ class CartFragment : BaseFragment<FragmentCartBinding>() {
                     
                     // Clear the cart after successful order
                     withContext(Dispatchers.IO) {
-                        if (cartItems.isNotEmpty()) {
-                            cartRepository.clearCart(cartItems.first().cartId)
-                        }
+                        cartRepository.clearCart(cartId)
                     }
                     
                     // Navigate to order confirmation
@@ -207,6 +212,14 @@ class CartFragment : BaseFragment<FragmentCartBinding>() {
                 val userId = getCurrentUserId() ?: "guest_user"
                 val result = withContext(Dispatchers.IO) {
                     cartRepository.getCartItems(userId)
+                }
+                
+                val cartTotalResult = withContext(Dispatchers.IO) {
+                    cartRepository.getCartTotal(userId)
+                }
+                
+                if (cartTotalResult.isSuccess) {
+                    cartTotal = cartTotalResult.getOrNull() ?: 0.0
                 }
                 
                 if (result.isSuccess) {
@@ -283,7 +296,7 @@ class CartFragment : BaseFragment<FragmentCartBinding>() {
         cartTotal = cartItems.sumOf { it.price * it.quantity }
         
         // Reset shipping cost based on cart total
-        shippingCost = if (cartTotal >= 1000) 0.0 else 50.0
+        shippingCost = if (cartTotal >= 1000.0) 0.0 else 50.0
         
         // Reset discount if coupon was applied
         if (appliedCoupon != null) {
@@ -301,7 +314,7 @@ class CartFragment : BaseFragment<FragmentCartBinding>() {
         binding.tvShippingValue.text = "₹${String.format("%.2f", shippingCost)}"
         
         // Add discount section if applicable
-        if (discount > 0) {
+        if (discount > 0.0) {
             binding.discountLayout.visibility = View.VISIBLE
             binding.tvDiscountValue.text = "-₹${String.format("%.2f", discount)}"
         } else {
@@ -309,7 +322,7 @@ class CartFragment : BaseFragment<FragmentCartBinding>() {
         }
         
         // Show free shipping message if applicable
-        if (shippingCost == 0) {
+        if (shippingCost == 0.0) {
             binding.tvShippingLabel.text = "Shipping (Free)"
         } else {
             binding.tvShippingLabel.text = "Shipping"

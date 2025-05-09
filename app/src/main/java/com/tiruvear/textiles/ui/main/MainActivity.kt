@@ -2,6 +2,8 @@ package com.tiruvear.textiles.ui.main
 
 import android.os.Bundle
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.NavController
@@ -12,6 +14,7 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.tiruvear.textiles.R
 import com.tiruvear.textiles.databinding.ActivityMainBinding
+import com.tiruvear.textiles.utils.DatabaseTester
 
 class MainActivity : AppCompatActivity() {
     private val TAG = "MainActivity"
@@ -43,6 +46,22 @@ class MainActivity : AppCompatActivity() {
         
         // Set up bottom navigation click listeners with error handling
         setupBottomNavWithErrorHandling()
+    }
+    
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.main_menu, menu)
+        return true
+    }
+    
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_test_database -> {
+                // Test database connection
+                DatabaseTester.testDatabaseConnection(this)
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
     }
     
     private fun showHomeFragment() {

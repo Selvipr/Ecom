@@ -39,6 +39,9 @@
         <action
             android:id="@+id/action_navigation_cart_to_checkoutFragment"
             app:destination="@id/checkoutFragment" />
+        <action
+            android:id="@+id/action_navigation_cart_to_orderConfirmationFragment"
+            app:destination="@id/orderConfirmationFragment" />
     </fragment>
 
     <fragment
@@ -124,11 +127,20 @@
     <!-- Order Confirmation Fragment -->
     <fragment
         android:id="@+id/orderConfirmationFragment"
-        android:name="com.tiruvear.textiles.ui.main.checkout.OrderConfirmationFragment"
+        android:name="com.tiruvear.textiles.ui.main.orders.OrderConfirmationFragment"
         android:label="Order Confirmation"
         tools:layout="@layout/fragment_order_confirmation">
         <argument
             android:name="orderId"
-            app:argType="string" />
+            app:argType="string"
+            app:nullable="true" />
+        <action
+            android:id="@+id/action_orderConfirmationFragment_to_navigation_home"
+            app:destination="@id/navigation_home"
+            app:popUpTo="@id/navigation_home"
+            app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_orderConfirmationFragment_to_orderDetailFragment"
+            app:destination="@id/orderDetailFragment" />
     </fragment>
 </navigation> 

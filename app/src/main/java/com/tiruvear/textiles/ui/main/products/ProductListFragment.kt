@@ -54,6 +54,13 @@ class ProductListFragment : BaseFragment<FragmentProductListBinding>() {
         setupUI()
         setupRecyclerView()
         loadProducts()
+        setupCartButton()
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        // Update cart count when returning to this fragment
+        updateCartCount()
     }
     
     private fun setupUI() {
@@ -71,6 +78,42 @@ class ProductListFragment : BaseFragment<FragmentProductListBinding>() {
                 findNavController().navigateUp()
             } catch (e: Exception) {
                 Log.e(TAG, "Error navigating back: ${e.message}", e)
+            }
+        }
+    }
+    
+    private fun setupCartButton() {
+        binding.btnCart.setOnClickListener {
+            try {
+                findNavController().navigate(R.id.navigation_cart)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error navigating to cart: ${e.message}", e)
+                showToast("Unable to navigate to cart")
+            }
+        }
+        
+        // Initialize cart count
+        updateCartCount()
+    }
+    
+    private fun updateCartCount() {
+        coroutineScope.launch {
+            try {
+                val userId = getCurrentUserId() ?: "guest_user"
+                val result = withContext(Dispatchers.IO) {
+                    cartRepository.getCartItemCount(userId)
+                }
+                
+                if (result.isSuccess) {
+                    val count = result.getOrNull() ?: 0
+                    
+                    binding.tvCartCount.apply {
+                        text = if (count > 9) "9+" else count.toString()
+                        visibility = if (count > 0) View.VISIBLE else View.GONE
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error getting cart count: ${e.message}", e)
             }
         }
     }
@@ -183,6 +226,9 @@ class ProductListFragment : BaseFragment<FragmentProductListBinding>() {
                 if (result.isSuccess) {
                     showToast("${product.name} added to cart")
                     
+                    // Update cart count
+                    updateCartCount()
+                    
                     // Show confirmation dialog with option to view cart
                     showAddToCartConfirmation()
                 } else {
@@ -217,6 +263,8 @@ class ProductListFragment : BaseFragment<FragmentProductListBinding>() {
     
     private fun buyNow(product: Product) {
         // First add to cart, then navigate to checkout
+        binding.progressBar.visibility = View.VISIBLE
+        
         coroutineScope.launch {
             try {
                 val userId = getCurrentUserId() ?: "guest_user"
@@ -224,13 +272,22 @@ class ProductListFragment : BaseFragment<FragmentProductListBinding>() {
                     cartRepository.addToCart(userId, product.id, 1)
                 }
                 
+                binding.progressBar.visibility = View.GONE
+                
                 if (result.isSuccess) {
                     // Navigate to checkout
-                    findNavController().navigate(R.id.action_productListFragment_to_cartFragment)
+                    try {
+                        findNavController().navigate(R.id.action_productListFragment_to_cartFragment)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error with specific navigation: ${e.message}", e)
+                        // Try the general navigation destination
+                        findNavController().navigate(R.id.navigation_cart)
+                    }
                 } else {
                     showToast("Failed to proceed to checkout")
                 }
             } catch (e: Exception) {
+                binding.progressBar.visibility = View.GONE
                 Log.e(TAG, "Error buying product: ${e.message}", e)
                 showToast("Error proceeding to checkout")
             }
