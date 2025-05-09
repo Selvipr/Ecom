@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
@@ -86,8 +87,56 @@ class HomeFragment : Fragment() {
     
     private fun setupSearchBar() {
         binding.etSearch.setOnClickListener {
-            // Navigate to search screen or show search dialog
-            Toast.makeText(requireContext(), "Search feature coming soon!", Toast.LENGTH_SHORT).show()
+            showSearchDialog()
+        }
+        
+        binding.etSearch.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) {
+                showSearchDialog()
+            }
+        }
+    }
+    
+    private fun showSearchDialog() {
+        val searchDialog = AlertDialog.Builder(requireContext())
+            .setTitle("Search Products")
+            .setView(R.layout.dialog_search)
+            .create()
+        
+        searchDialog.show()
+        
+        // Get dialog views
+        val searchEditText = searchDialog.findViewById<android.widget.EditText>(R.id.et_search_dialog)
+        val searchButton = searchDialog.findViewById<android.widget.Button>(R.id.btn_search)
+        val cancelButton = searchDialog.findViewById<android.widget.Button>(R.id.btn_cancel)
+        
+        // Setup listeners
+        searchButton?.setOnClickListener {
+            val query = searchEditText?.text.toString().trim()
+            if (query.isNotEmpty()) {
+                searchProducts(query)
+                searchDialog.dismiss()
+            }
+        }
+        
+        cancelButton?.setOnClickListener {
+            searchDialog.dismiss()
+        }
+    }
+    
+    private fun searchProducts(query: String) {
+        // Create a bundle with the search query
+        val bundle = Bundle().apply {
+            putString("query", query)
+            putString("title", "Search Results: $query")
+        }
+        
+        try {
+            // Navigate to product list with search query
+            findNavController().navigate(R.id.action_navigation_home_to_productListFragment, bundle)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error navigating to search results: ${e.message}", e)
+            Toast.makeText(requireContext(), "Unable to search products", Toast.LENGTH_SHORT).show()
         }
     }
     
@@ -128,18 +177,33 @@ class HomeFragment : Fragment() {
         
         // Setup click listeners for "View All" buttons
         binding.tvFeaturedViewAll.setOnClickListener {
-            Toast.makeText(requireContext(), "View all featured products", Toast.LENGTH_SHORT).show()
-            // TODO: Navigate to all featured products
+            navigateToViewAllProducts("Featured Products", "featured")
         }
         
         binding.tvNewArrivalsViewAll.setOnClickListener {
-            Toast.makeText(requireContext(), "View all new arrivals", Toast.LENGTH_SHORT).show()
-            // TODO: Navigate to all new arrivals
+            navigateToViewAllProducts("New Arrivals", "new")
         }
         
         binding.tvCategoriesViewAll.setOnClickListener {
-            Toast.makeText(requireContext(), "View all categories", Toast.LENGTH_SHORT).show()
-            // TODO: Navigate to all categories
+            try {
+                findNavController().navigate(R.id.navigation_categories)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error navigating to all categories: ${e.message}", e)
+                Toast.makeText(requireContext(), "Unable to view all categories", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+    
+    private fun navigateToViewAllProducts(title: String, type: String) {
+        try {
+            val bundle = Bundle().apply {
+                putString("title", title)
+                putString("type", type)
+            }
+            findNavController().navigate(R.id.action_navigation_home_to_productListFragment, bundle)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error navigating to all products: ${e.message}", e)
+            Toast.makeText(requireContext(), "Unable to view all products", Toast.LENGTH_SHORT).show()
         }
     }
     

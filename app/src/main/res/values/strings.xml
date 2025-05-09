@@ -85,6 +85,12 @@
     <string name="order_confirmed">Order Confirmed</string>
     <string name="order_shipped">Order Shipped</string>
     <string name="order_delivered">Order Delivered</string>
+    <string name="no_orders_found">No orders found</string>
+    <string name="filter_by_status">Filter:</string>
+    <string name="cancel">Cancel</string>
+    <string name="tracking_number">Tracking Number:</string>
+    <string name="reorder">Reorder</string>
+    <string name="track_shipment">Track Shipment</string>
     
     <!-- Admin Strings -->
     <string name="admin_login">Admin Login</string>
@@ -147,4 +153,8 @@
     <string name="about_us">About Us</string>
     <string name="terms_and_conditions">Terms &amp; Conditions</string>
     <string name="privacy_policy">Privacy Policy</string>
+    
+    <!-- Profile additional strings -->
+    <string name="guest_user">Guest User</string>
+    <string name="login_to_access">Login to access your account</string>
 </resources>

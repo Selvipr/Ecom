@@ -29,6 +29,9 @@ class ProductListFragment : BaseFragment<FragmentProductListBinding>() {
     
     private var categoryId: String? = null
     private var categoryName: String? = null
+    private var searchQuery: String? = null
+    private var listType: String? = null // "featured", "new", or null (for category or search)
+    private var title: String? = null
     private var page = 1
     private val limit = 20
     
@@ -43,6 +46,9 @@ class ProductListFragment : BaseFragment<FragmentProductListBinding>() {
         arguments?.let {
             categoryId = it.getString("categoryId")
             categoryName = it.getString("categoryName")
+            searchQuery = it.getString("query")
+            listType = it.getString("type")
+            title = it.getString("title")
         }
         
         setupUI()
@@ -51,7 +57,22 @@ class ProductListFragment : BaseFragment<FragmentProductListBinding>() {
     }
     
     private fun setupUI() {
-        binding.tvCategoryTitle.text = categoryName ?: "Products"
+        // Set the appropriate title based on the arguments
+        when {
+            title != null -> binding.tvCategoryTitle.text = title
+            categoryName != null -> binding.tvCategoryTitle.text = categoryName
+            searchQuery != null -> binding.tvCategoryTitle.text = "Search: $searchQuery"
+            else -> binding.tvCategoryTitle.text = "Products"
+        }
+        
+        // Add back button functionality
+        binding.btnBack.setOnClickListener {
+            try {
+                findNavController().navigateUp()
+            } catch (e: Exception) {
+                Log.e(TAG, "Error navigating back: ${e.message}", e)
+            }
+        }
     }
     
     private fun setupRecyclerView() {
@@ -74,29 +95,56 @@ class ProductListFragment : BaseFragment<FragmentProductListBinding>() {
         
         coroutineScope.launch {
             try {
-                val productsResult = withContext(Dispatchers.IO) {
-                    categoryId?.let {
-                        productRepository.getProductsByCategory(it, page, limit)
-                    } ?: productRepository.getAllProducts(page, limit)
+                val result = when {
+                    // If search query is provided, search for products
+                    searchQuery != null -> {
+                        withContext(Dispatchers.IO) {
+                            productRepository.searchProducts(searchQuery!!, page, limit)
+                        }
+                    }
+                    // If category ID is provided, get products for that category
+                    categoryId != null -> {
+                        withContext(Dispatchers.IO) {
+                            productRepository.getProductsByCategory(categoryId!!, page, limit)
+                        }
+                    }
+                    // If listType is "featured", get featured products
+                    listType == "featured" -> {
+                        withContext(Dispatchers.IO) {
+                            productRepository.getFeaturedProducts(limit * 2) // Show more in the all view
+                        }
+                    }
+                    // If listType is "new", get new arrivals
+                    listType == "new" -> {
+                        withContext(Dispatchers.IO) {
+                            productRepository.getNewArrivals(limit * 2) // Show more in the all view
+                        }
+                    }
+                    // Default to get all products
+                    else -> {
+                        withContext(Dispatchers.IO) {
+                            productRepository.getAllProducts(page, limit)
+                        }
+                    }
                 }
                 
-                if (productsResult?.isSuccess == true) {
-                    val products = productsResult.getOrNull() ?: emptyList()
-                    updateProducts(products)
+                binding.progressBar.visibility = View.GONE
+                
+                if (result.isSuccess) {
+                    val products = result.getOrNull() ?: emptyList()
+                    updateProductList(products)
                 } else {
-                    Log.e(TAG, "Error loading products: ${productsResult?.exceptionOrNull()?.message}")
                     showError("Failed to load products")
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Exception loading products: ${e.message}", e)
-                showError("An error occurred while loading products")
-            } finally {
                 binding.progressBar.visibility = View.GONE
+                Log.e(TAG, "Error loading products: ${e.message}", e)
+                showError("Failed to load products")
             }
         }
     }
     
-    private fun updateProducts(products: List<Product>) {
+    private fun updateProductList(products: List<Product>) {
         if (products.isEmpty()) {
             binding.tvEmpty.visibility = View.VISIBLE
             binding.rvProducts.visibility = View.GONE
@@ -121,6 +169,8 @@ class ProductListFragment : BaseFragment<FragmentProductListBinding>() {
     }
     
     private fun addToCart(product: Product) {
+        binding.progressBar.visibility = View.VISIBLE
+        
         coroutineScope.launch {
             try {
                 val userId = getCurrentUserId() ?: "guest_user"
@@ -128,16 +178,41 @@ class ProductListFragment : BaseFragment<FragmentProductListBinding>() {
                     cartRepository.addToCart(userId, product.id, 1)
                 }
                 
+                binding.progressBar.visibility = View.GONE
+                
                 if (result.isSuccess) {
                     showToast("${product.name} added to cart")
+                    
+                    // Show confirmation dialog with option to view cart
+                    showAddToCartConfirmation()
                 } else {
-                    showToast("Failed to add to cart")
+                    val errorMessage = result.exceptionOrNull()?.message ?: "Failed to add to cart"
+                    showToast("Error: $errorMessage")
                 }
             } catch (e: Exception) {
+                binding.progressBar.visibility = View.GONE
                 Log.e(TAG, "Error adding to cart: ${e.message}", e)
                 showToast("Error adding to cart")
             }
         }
+    }
+    
+    private fun showAddToCartConfirmation() {
+        val builder = androidx.appcompat.app.AlertDialog.Builder(requireContext())
+        builder.setTitle("Item Added to Cart")
+            .setMessage("Item has been added to your cart. What would you like to do?")
+            .setPositiveButton("View Cart") { _, _ ->
+                try {
+                    findNavController().navigate(R.id.navigation_cart)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error navigating to cart: ${e.message}", e)
+                    showToast("Unable to navigate to cart")
+                }
+            }
+            .setNegativeButton("Continue Shopping") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
     }
     
     private fun buyNow(product: Product) {

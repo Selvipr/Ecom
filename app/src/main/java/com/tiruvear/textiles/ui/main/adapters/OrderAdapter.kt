@@ -1,6 +1,7 @@
 package com.tiruvear.textiles.ui.main.adapters
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.tiruvear.textiles.data.models.Order
@@ -12,7 +13,8 @@ import java.util.Locale
 class OrderAdapter(
     private val orders: List<Order>,
     private val onTrackOrder: (Order) -> Unit,
-    private val onViewDetails: (Order) -> Unit
+    private val onViewDetails: (Order) -> Unit,
+    private val onCancelOrder: (Order) -> Unit
 ) : RecyclerView.Adapter<OrderAdapter.OrderViewHolder>() {
     
     private val dateFormatter = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
@@ -39,13 +41,58 @@ class OrderAdapter(
             binding.tvOrderStatus.text = getFormattedStatus(order.status)
             binding.tvOrderStatus.setTextColor(getStatusColor(order.status))
             
-            // Setup buttons
-            binding.btnTrackOrder.setOnClickListener {
-                onTrackOrder(order)
+            // Show delivery date if available and delivered
+            if (order.deliveryDate != null && order.status == OrderStatus.DELIVERED) {
+                binding.tvDeliveryDate.text = "Delivered on ${dateFormatter.format(order.deliveryDate)}"
+                binding.tvDeliveryDate.visibility = View.VISIBLE
+            } else if (order.status == OrderStatus.CANCELLED) {
+                binding.tvDeliveryDate.text = "Order was cancelled"
+                binding.tvDeliveryDate.visibility = View.VISIBLE
+            } else if (order.status == OrderStatus.RETURNED) {
+                binding.tvDeliveryDate.text = "Order was returned"
+                binding.tvDeliveryDate.visibility = View.VISIBLE
+            } else {
+                binding.tvDeliveryDate.visibility = View.GONE
             }
             
+            // Show number of items
+            val itemCount = order.items.size
+            val itemText = if (itemCount == 1) "1 item" else "$itemCount items"
+            binding.tvItemCount.text = itemText
+            
+            // Setup buttons based on order status
+            setupButtons(order)
+            
+            // Make the entire order item clickable to view details
+            binding.root.setOnClickListener {
+                onViewDetails(order)
+            }
+        }
+        
+        private fun setupButtons(order: Order) {
+            // Track Order button only visible for shipped orders
+            if (order.status == OrderStatus.SHIPPED) {
+                binding.btnTrackOrder.visibility = View.VISIBLE
+                binding.btnTrackOrder.setOnClickListener {
+                    onTrackOrder(order)
+                }
+            } else {
+                binding.btnTrackOrder.visibility = View.GONE
+            }
+            
+            // View Details button always visible
             binding.btnViewDetails.setOnClickListener {
                 onViewDetails(order)
+            }
+            
+            // Cancel button only for pending or confirmed orders
+            if (order.status == OrderStatus.PENDING || order.status == OrderStatus.CONFIRMED) {
+                binding.btnCancelOrder.visibility = View.VISIBLE
+                binding.btnCancelOrder.setOnClickListener {
+                    onCancelOrder(order)
+                }
+            } else {
+                binding.btnCancelOrder.visibility = View.GONE
             }
         }
         

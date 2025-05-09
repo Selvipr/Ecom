@@ -95,7 +95,7 @@ class SessionManager(context: Context) {
         }
     }
     
-    fun clearUserSession() {
+    fun clearSession() {
         encryptedPreferences.edit()
             .remove(KEY_USER_ID)
             .remove(KEY_USER_TOKEN)

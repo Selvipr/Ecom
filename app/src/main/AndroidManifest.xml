@@ -35,6 +35,9 @@
             android:name=".ui.admin.AdminActivity"
             android:exported="false" />
         <activity
+            android:name=".ui.main.profile.ProfileTestActivity"
+            android:exported="false" />
+        <activity
             android:name="com.example.e_com.MainActivity"
             android:exported="false"
             android:theme="@style/Theme.TiruvearTextiles" />

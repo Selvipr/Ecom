@@ -19,15 +19,6 @@ data class Order(
 )
 
 /**
- * Represents an item in an order
- */
-data class OrderItem(
-    val product: Product,
-    val quantity: Int,
-    val price: Double
-)
-
-/**
  * Enum representing possible order statuses
  */
 enum class OrderStatus {

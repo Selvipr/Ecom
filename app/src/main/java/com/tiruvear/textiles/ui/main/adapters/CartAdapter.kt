@@ -39,9 +39,13 @@ class CartAdapter(
             binding.tvProductPrice.text = "₹${String.format("%.2f", cartItem.price)}"
             binding.tvQuantity.text = cartItem.quantity.toString()
             
-            // Load product image
+            // Calculate and show total price of line item
+            val totalPrice = cartItem.quantity * cartItem.price
+            binding.tvItemTotal.text = "₹${String.format("%.2f", totalPrice)}"
+            
+            // Load product image using displayImageUrl
             Glide.with(binding.root.context)
-                .load(product.imageUrl)
+                .load(product.displayImageUrl)
                 .placeholder(R.drawable.placeholder_image)
                 .error(R.drawable.placeholder_image)
                 .centerCrop()
@@ -63,7 +67,19 @@ class CartAdapter(
             
             binding.btnIncrease.setOnClickListener {
                 val newQuantity = cartItem.quantity + 1
-                onUpdateQuantity(cartItem, newQuantity)
+                // Check stock availability
+                if (newQuantity <= product.stockQuantity) {
+                    onUpdateQuantity(cartItem, newQuantity)
+                } else {
+                    // Show stock limit message through the adapter callback
+                    binding.root.context.let {
+                        android.widget.Toast.makeText(
+                            it, 
+                            "Sorry, only ${product.stockQuantity} items available in stock", 
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
             }
         }
     }

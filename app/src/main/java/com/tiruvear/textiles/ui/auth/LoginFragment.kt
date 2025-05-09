@@ -96,18 +96,32 @@ class LoginFragment : Fragment() {
                 (requireActivity() as AuthActivity).hideLoading()
                 
                 if (result.isSuccess) {
-                    Toast.makeText(requireContext(), R.string.success_login, Toast.LENGTH_SHORT).show()
-                    
-                    // Navigate to main activity
-                    val intent = Intent(requireContext(), MainActivity::class.java)
-                    startActivity(intent)
-                    requireActivity().finish()
+                    val loginResponse = result.getOrNull()
+                    if (loginResponse != null) {
+                        // Save user session data
+                        val sessionManager = com.tiruvear.textiles.data.util.SessionManager(requireContext())
+                        sessionManager.setUserLoggedIn(true)
+                        sessionManager.saveUserId(loginResponse.user.id)
+                        sessionManager.saveUserToken(loginResponse.token)
+                        sessionManager.saveUserData(loginResponse.user)
+                        
+                        Toast.makeText(requireContext(), R.string.success_login, Toast.LENGTH_SHORT).show()
+                        
+                        // Navigate to main activity
+                        val intent = Intent(requireContext(), MainActivity::class.java)
+                        startActivity(intent)
+                        requireActivity().finish()
+                    } else {
+                        Toast.makeText(requireContext(), R.string.error_login, Toast.LENGTH_SHORT).show()
+                    }
                 } else {
-                    Toast.makeText(requireContext(), R.string.error_login, Toast.LENGTH_SHORT).show()
+                    // Show the specific error message
+                    val errorMessage = result.exceptionOrNull()?.message ?: getString(R.string.error_login)
+                    Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show()
                 }
             } catch (e: Exception) {
                 (requireActivity() as AuthActivity).hideLoading()
-                Toast.makeText(requireContext(), R.string.error_login, Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Login error: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }

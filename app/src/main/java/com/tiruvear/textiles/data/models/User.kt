@@ -8,7 +8,8 @@ data class User(
     val name: String,
     val email: String,
     val phone: String? = null,
-    val address: String? = null,
     val profileImageUrl: String? = null,
-    val isVerified: Boolean = false
+    val isVerified: Boolean = false,
+    val createdAt: Long? = null,
+    val updatedAt: Long? = null
 ) 
