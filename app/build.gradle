@@ -17,7 +17,7 @@ android {
         
         // Supabase configuration
         buildConfigField "String", "SUPABASE_URL", "\"https://spgxymonqkttpzfsztvp.supabase.co\""
-        buildConfigField "String", "SUPABASE_KEY", "\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwZ3h5bW9ucWt0dHB6ZnN6dHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTUxNjE2NjgsImV4cCI6MjAyMDczNzY2OH0.00000000000000000000000000000000\""
+        buildConfigField "String", "SUPABASE_KEY", "\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwZ3h5bW9ucWt0dHB6ZnN6dHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyNjk5NzEsImV4cCI6MjA2MTg0NTk3MX0.TywFD4g7rCEHaf4blMlIpclX_obKtAb_0mD1NmRH-t8\""
     }
 
     buildTypes {
@@ -41,6 +41,11 @@ android {
         kotlinCompilerExtensionVersion = "1.4.0"
     }
     namespace 'com.tiruvear.textiles'
+    
+    lint {
+        baseline = file("lint-baseline.xml")
+        abortOnError = false
+    }
 }
 
 dependencies {

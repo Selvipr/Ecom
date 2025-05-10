@@ -1,5 +1,29 @@
 # Tiruvear Textiles - E-commerce App
 
+## QUICK DATABASE SETUP GUIDE
+
+To fix the "Database setup required" error, follow these steps:
+
+1. Go to [Supabase](https://supabase.com) and sign in
+2. Open your project (URL: https://spgxymonqkttpzfsztvp.supabase.co)
+3. Go to the SQL Editor in the Supabase dashboard
+4. Execute the SQL scripts in this order:
+   - First, run the `supabase/1_database_structure.sql` file 
+   - Next, run the `supabase/2_security_policies.sql` file
+   - Finally, run the `supabase/sample_data.sql` file for test data
+   
+   ⚠️ **Important:** Run each file separately to avoid SQL syntax errors
+   
+5. In Supabase, go to Storage and create three buckets:
+   - `product-images`
+   - `category-images`
+   - `user-avatars`
+6. For the `product-images` bucket, add a policy for public access:
+   - Click on the bucket, go to "Policies"
+   - Add new policy, select "For anonymous users" and "GET" operations
+   - Set policy name as "Public Access" and statement as "true"
+7. Restart the app - the error should now be gone!
+
 ## Features Implemented
 
 ### Product Display and Navigation
@@ -167,4 +191,43 @@ The app follows an MVVM architecture:
 - **Models**: Data classes representing entities like User, Product, etc.
 - **Repositories**: Handle data operations and communicate with Supabase
 - **ViewModels**: Manage UI-related data and communicate with repositories
-- **Views**: UI components that display data to the user 
+- **Views**: UI components that display data to the user
+
+## Database Setup Required
+
+This application uses Supabase as its backend database service. You need to set up Supabase before using the app:
+
+### Setting Up Supabase
+
+1. **Create a Supabase Account**:
+   - Go to [https://supabase.com](https://supabase.com) and sign up for an account
+   - Create a new project
+
+2. **Set Up the Database**:
+   - In your Supabase project dashboard, go to the SQL Editor
+   - Copy the contents of the `supabase/database_setup.sql` file
+   - Paste and execute the SQL script in the Supabase SQL Editor
+
+3. **Configure the App**:
+   - Get your Supabase project URL and anon key from the Settings > API section
+   - Update these values in the `app/src/main/java/com/tiruvear/textiles/TiruvearApp.kt` file:
+     ```kotlin
+     const val SUPABASE_URL = "your_project_url"
+     const val SUPABASE_KEY = "your_anon_key"
+     ```
+
+4. **Set Up Storage Buckets**:
+   - In Supabase, go to Storage and create the following buckets:
+     - `product-images`
+     - `category-images`
+     - `user-avatars`
+   - Set up public access for the product-images bucket
+
+5. **Build and Run the App**:
+   - After completing the database setup, build and run the app:
+     ```
+     ./gradlew build
+     ./gradlew installDebug
+     ```
+
+For more detailed instructions, refer to the `supabase/setup_instructions.md` file. 

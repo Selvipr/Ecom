@@ -4,6 +4,7 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name=".TiruvearApp"
@@ -31,9 +32,11 @@
         <activity
             android:name=".ui.main.MainActivity"
             android:exported="false" />
+        <!-- AdminActivity is missing from the project
         <activity
             android:name=".ui.admin.AdminActivity"
             android:exported="false" />
+        -->
         <activity
             android:name=".ui.main.profile.ProfileTestActivity"
             android:exported="false" />
