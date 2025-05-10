@@ -1,4 +1,4 @@
-## A Based Textiles - E-commerce App
+## A Textile Based - E-commerce App
 
 ## Features Implemented
 
