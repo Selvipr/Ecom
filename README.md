@@ -5,7 +5,7 @@
 To fix the "Database setup required" error, follow these steps:
 
 1. Go to [Supabase](https://supabase.com) and sign in
-2. Open your project (URL: https://spgxymonqkttpzfsztvp.supabase.co)
+2. Open your project 
 3. Go to the SQL Editor in the Supabase dashboard
 4. Execute the SQL scripts in this order:
    - First, run the `supabase/1_database_structure.sql` file 
